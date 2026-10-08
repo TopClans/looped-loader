@@ -1,0 +1,11 @@
+# Libraries, config and docs are LF everywhere; CRLF churn in diffs is noise.
+* text=auto eol=lf
+
+# Published media must never be touched by line-ending or diff normalisation.
+*.mp4 binary
+*.webm binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
