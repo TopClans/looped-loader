@@ -1,0 +1,1041 @@
+{
+  "schemaVersion": 1,
+  "generatedBy": "looped-loader-tools/0.1.0 ffmpeg 8.1.2-essentials_build-www.gyan.dev",
+  "corpus": {
+    "clips": 32,
+    "totalBytes": 4049965
+  },
+  "clips": [
+    {
+      "id": "0AMt9sYf-yB1Zu0Px8rtIMFvx3fzgltIaaQ5nIz0CA4",
+      "sources": [
+        {
+          "src": "clips/0AMt9sYf-yB1Zu0Px8rtIMFvx3fzgltIaaQ5nIz0CA4.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 466,
+      "height": 254,
+      "durationMs": 3600,
+      "fps": 10,
+      "bytes": {
+        "mp4": 231690
+      },
+      "sha256": {
+        "mp4": "a5ad05e826b51dbdd1a20d2f89a574bf20a2cdf2468833f9ce726231c221f864"
+      },
+      "sourceSha256": "b5402bee62803e83d0310e8cc0c21173c946a274fb11b8f7b01fc54daf003c8f",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 10,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 19.42642299107143,
+        "stepP90": 25.59765625,
+        "seam": 27.0888671875,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "2F4wy0zlipQSr9BMqGVE3nnK_OZfD1QKxjKCZeoq434",
+      "sources": [
+        {
+          "src": "clips/2F4wy0zlipQSr9BMqGVE3nnK_OZfD1QKxjKCZeoq434.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 240,
+      "height": 168,
+      "durationMs": 3030,
+      "fps": 13.183,
+      "bytes": {
+        "mp4": 26200
+      },
+      "sha256": {
+        "mp4": "2b18ad65b7e4b41c7ba741b1454e0cc4caa25ae100bdadce00cf6eda30d0b670"
+      },
+      "sourceSha256": "dcdbbd5250d5bc43b4065b87279b8c0c6872783daa333caa35a0b3724dbab13b",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 13.183,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 8.645332532051283,
+        "stepP90": 13.95703125,
+        "seam": 13.81640625
+      }
+    },
+    {
+      "id": "2k7u690rx8q21",
+      "sources": [
+        {
+          "src": "clips/2k7u690rx8q21.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 292,
+      "durationMs": 450,
+      "fps": 20,
+      "bytes": {
+        "mp4": 22527
+      },
+      "sha256": {
+        "mp4": "8495a6372847a4d798c29af78e032bf437a2f467ba703db3cf8e9467e96dd2b5"
+      },
+      "sourceSha256": "692255acbf3b1ef8adb9387c1bf2c81316d7b6fd24015e0273422d40f74d3ae1",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 20,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 2.2880859375,
+        "stepP90": 2.8916015625,
+        "seam": 2.525390625
+      }
+    },
+    {
+      "id": "2p1qoycrgfm31",
+      "sources": [
+        {
+          "src": "clips/2p1qoycrgfm31.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 270,
+      "durationMs": 497,
+      "fps": 24.167,
+      "bytes": {
+        "mp4": 42519
+      },
+      "sha256": {
+        "mp4": "f08bffd0a301cd369ce40c5cf6ec9abe7c463bb53f37a620b5ec60c65619da28"
+      },
+      "sourceSha256": "d9a51e24516ab75c9b843425ad663997fac1ac1270a62292ae2fda6c21c57beb",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 24.167,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 1.4010120738636365,
+        "stepP90": 3.1171875,
+        "seam": 4.7978515625,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "3n6TAn37l_oJQHXIfLouvJWhWDDft3RAnGi8UHsdl8I",
+      "sources": [
+        {
+          "src": "clips/3n6TAn37l_oJQHXIfLouvJWhWDDft3RAnGi8UHsdl8I.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 360,
+      "durationMs": 6000,
+      "fps": 30,
+      "bytes": {
+        "mp4": 60408
+      },
+      "sha256": {
+        "mp4": "7e704896d71676e876894df7bca943a5dac1ee3dab5d217c459fefa24f92a658"
+      },
+      "sourceSha256": "9c0928a1c58359e7df82113985863ac6e8110aff58ca37b3bffc7b220e39c229",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 0.6908170391061452,
+        "stepP90": 1.2314453125,
+        "seam": 0.283203125
+      }
+    },
+    {
+      "id": "5gBAKdn5n8dZbCh6adn12FirVRaGFUXs6U91UMF-BBM",
+      "sources": [
+        {
+          "src": "clips/5gBAKdn5n8dZbCh6adn12FirVRaGFUXs6U91UMF-BBM.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 300,
+      "height": 472,
+      "durationMs": 2600,
+      "fps": 25,
+      "bytes": {
+        "mp4": 80061
+      },
+      "sha256": {
+        "mp4": "29630af27ee618118de882585ec666a67e5055bb614227a0d3b67a614de1244b"
+      },
+      "sourceSha256": "035ef4f838d99647a4039499c979a51e1d4d436edff8a9f8af01ed88aaea6e84",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 8.80694580078125,
+        "stepP90": 14.4091796875,
+        "seam": 14.2109375
+      }
+    },
+    {
+      "id": "71mbcj5vg2n21",
+      "sources": [
+        {
+          "src": "clips/71mbcj5vg2n21.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 268,
+      "durationMs": 6400,
+      "fps": 25,
+      "bytes": {
+        "mp4": 143419
+      },
+      "sha256": {
+        "mp4": "550c1c903c47bcdb9c7be9edb3bcd3dd32b2e381ac63631a591c545781414555"
+      },
+      "sourceSha256": "bdc53f4a00a85710d5cd176351c310ecda9671289f8a4798ef6731cb51d6f745",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 1.2486856328616351,
+        "stepP90": 3.5185546875,
+        "seam": 0.47265625
+      }
+    },
+    {
+      "id": "9EhOAEmULMQ4Qc5cwSLr5IolxSvDr3bgGcypKUKkzSE",
+      "sources": [
+        {
+          "src": "clips/9EhOAEmULMQ4Qc5cwSLr5IolxSvDr3bgGcypKUKkzSE.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 420,
+      "height": 420,
+      "durationMs": 2000,
+      "fps": 25,
+      "bytes": {
+        "mp4": 104346
+      },
+      "sha256": {
+        "mp4": "a7036b25dae34b91b50d4bc5295bc362b623f641293d72bb7f1e439c80292baa"
+      },
+      "sourceSha256": "4299d062ae39cffe4d952001874fe8bf1522493f1f4742fa0eafd6ecb331a3be",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 5.601622289540816,
+        "stepP90": 10.1748046875,
+        "seam": 8.0634765625
+      }
+    },
+    {
+      "id": "RHCE7A7FGXBw7fULXAxoNAZTxQA930eWVxi0EW4UODY",
+      "sources": [
+        {
+          "src": "clips/RHCE7A7FGXBw7fULXAxoNAZTxQA930eWVxi0EW4UODY.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 360,
+      "durationMs": 10800,
+      "fps": 30,
+      "bytes": {
+        "mp4": 198360
+      },
+      "sha256": {
+        "mp4": "8671e239d25650fcf6d912a3a04bb643e616147e92b43dd0ebab7c89afc1882a"
+      },
+      "sourceSha256": "9f56b7d0cde959e922b73e69deb440a679cae9887d85acca83eebab7dcf8fcd9",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 1.9643418633900929,
+        "stepP90": 2.53125,
+        "seam": 2.453125
+      }
+    },
+    {
+      "id": "TGH-SlSNsq9B1KAxoZ9IGjAX7SUTVlTOBq3rg6BRrfI",
+      "sources": [
+        {
+          "src": "clips/TGH-SlSNsq9B1KAxoZ9IGjAX7SUTVlTOBq3rg6BRrfI.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 480,
+      "durationMs": 6600,
+      "fps": 10,
+      "bytes": {
+        "mp4": 232043
+      },
+      "sha256": {
+        "mp4": "ffb03d6b59d8a0f77a638031468cc2d789fd7809f71834e03e890c4c57162b66"
+      },
+      "sourceSha256": "1fc850a7f979bc6ff7916378b545e24824aaccaea164ea3fb79e52bcade83228",
+      "encode": {
+        "codec": "x264",
+        "crf": 30,
+        "longSide": 480,
+        "fpsCap": 10,
+        "note": "budget-adapted"
+      },
+      "loopSeam": {
+        "stepMean": 7.339483173076923,
+        "stepP90": 14.2900390625,
+        "seam": 22.771484375,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "_2EK3q4hHvoXczWeE-zEWN2nMPbL58Hh0n2Vxi0ihHo",
+      "sources": [
+        {
+          "src": "clips/_2EK3q4hHvoXczWeE-zEWN2nMPbL58Hh0n2Vxi0ihHo.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 310,
+      "height": 422,
+      "durationMs": 3200,
+      "fps": 12.5,
+      "bytes": {
+        "mp4": 116139
+      },
+      "sha256": {
+        "mp4": "33bd730d386182f0c550a06f46b55a21d6b51320d10f11ea2f2ff7589a324448"
+      },
+      "sourceSha256": "62352b6b257d964b493ce6877105d8b563187befca0063a9dd4a1cacb190d2c1",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 12.5,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 3.6848207131410255,
+        "stepP90": 6.5947265625,
+        "seam": 5.5595703125
+      }
+    },
+    {
+      "id": "azgfEFJhDSwy5D44YfXwmSM7ObncWSLua1xyVNtvQa4",
+      "sources": [
+        {
+          "src": "clips/azgfEFJhDSwy5D44YfXwmSM7ObncWSLua1xyVNtvQa4.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 280,
+      "durationMs": 8880,
+      "fps": 25,
+      "bytes": {
+        "mp4": 227746
+      },
+      "sha256": {
+        "mp4": "2e9a3773b887082f812a565df9ccde7143240d3c7484256027fdf832907b20ca"
+      },
+      "sourceSha256": "5a644a766c01a979ba5383d1d8eff290a1e29446b3c35641a8b77ea5cc9361ed",
+      "encode": {
+        "codec": "x264",
+        "crf": 29,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "budget-adapted"
+      },
+      "loopSeam": {
+        "stepMean": 0.9903227516968326,
+        "stepP90": 1.689453125,
+        "seam": 1.77734375,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "bn19rcp8jso11",
+      "sources": [
+        {
+          "src": "clips/bn19rcp8jso11.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 264,
+      "durationMs": 3600,
+      "fps": 20,
+      "bytes": {
+        "mp4": 219910
+      },
+      "sha256": {
+        "mp4": "bd3a2be7ad7f4d8beb6f4673fdb36af014adc1560638aea00b62766c1618df2c"
+      },
+      "sourceSha256": "d6358950ec270baefc7e024c7899cf84983bc11644c1b9d043d59452ad4e6ba4",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 20,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 8.09091659330986,
+        "stepP90": 10.943359375,
+        "seam": 10.076171875
+      }
+    },
+    {
+      "id": "d3whIZNcGUmGDl9CCdq4mESMqpWuzKGO8DFYj4XVC0A",
+      "sources": [
+        {
+          "src": "clips/d3whIZNcGUmGDl9CCdq4mESMqpWuzKGO8DFYj4XVC0A.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 278,
+      "height": 446,
+      "durationMs": 5240,
+      "fps": 25,
+      "bytes": {
+        "mp4": 235250
+      },
+      "sha256": {
+        "mp4": "f9f3db4c16b033513dd900f328a93f819c553e419a4948f28b0fe36425bdfd65"
+      },
+      "sourceSha256": "60f37295b9a1c3c1bb10bc73265f9d68bf941e8e9ea361f55e090f00548cf317",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 0.6801983173076923,
+        "stepP90": 1.04296875,
+        "seam": 1.255859375,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "e4JycnGOlbFJhvLLTFfEnqDQgoeielRcBwcMh3wTxAU",
+      "sources": [
+        {
+          "src": "clips/e4JycnGOlbFJhvLLTFfEnqDQgoeielRcBwcMh3wTxAU.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 300,
+      "height": 394,
+      "durationMs": 1840,
+      "fps": 25,
+      "bytes": {
+        "mp4": 63789
+      },
+      "sha256": {
+        "mp4": "2ef80898de69ab02aa90e0567642ae23f0e0e31e42aae76454eef47981ce873b"
+      },
+      "sourceSha256": "9d6f62eea568df3b5b4c6484316db8439418e76ce45bd13bf3a9b83dced6e86e",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 4.2405381944444445,
+        "stepP90": 5.400390625,
+        "seam": 5.04296875
+      }
+    },
+    {
+      "id": "fndtggd669o41",
+      "sources": [
+        {
+          "src": "clips/fndtggd669o41.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 460,
+      "height": 464,
+      "durationMs": 2710,
+      "fps": 17.343,
+      "bytes": {
+        "mp4": 117324
+      },
+      "sha256": {
+        "mp4": "1be1c157ea57be214740e41ee6040cf122bf86fa4fdf91c79377974ec0382581"
+      },
+      "sourceSha256": "c78f035daa2f95f2df94b403b1e90a6434db89873d53ee84385ff54df981e188",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 17.343,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 3.655642361111111,
+        "stepP90": 5.7392578125,
+        "seam": 3.947265625
+      }
+    },
+    {
+      "id": "gw2u04xr37r11",
+      "sources": [
+        {
+          "src": "clips/gw2u04xr37r11.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 384,
+      "height": 480,
+      "durationMs": 7600,
+      "fps": 30,
+      "bytes": {
+        "mp4": 249148
+      },
+      "sha256": {
+        "mp4": "cc9fda05bcaaeaf6c4b5471c7b89a3e02358f12676e6026cfd31145a9755de53"
+      },
+      "sourceSha256": "8aec4ec6ed49915c2a9608b5f40079fedf30e5dc23285ed85a98e159c24a4cc1",
+      "encode": {
+        "codec": "x264",
+        "crf": 28,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "budget-adapted"
+      },
+      "loopSeam": {
+        "stepMean": 0.15752770512114536,
+        "stepP90": 0.2158203125,
+        "seam": 0.8818359375,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "hbu2y35utsk31",
+      "sources": [
+        {
+          "src": "clips/hbu2y35utsk31.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 360,
+      "height": 480,
+      "durationMs": 455,
+      "fps": 30,
+      "bytes": {
+        "mp4": 21357
+      },
+      "sha256": {
+        "mp4": "a76fbd7ea3dfd5159e9f40ae035090538ad464e20f8e0856568671c96da5d549"
+      },
+      "sourceSha256": "53a8e57edce77b0ba3519df542b30b326af588a8486b2a1d720c118c996ddbc4",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 0.12530048076923078,
+        "stepP90": 0.177734375,
+        "seam": 0.12109375
+      }
+    },
+    {
+      "id": "iOjz6kFO7xszEQs1wY_AXcQSt_rCPGux1YS8cElqRVY",
+      "sources": [
+        {
+          "src": "clips/iOjz6kFO7xszEQs1wY_AXcQSt_rCPGux1YS8cElqRVY.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 270,
+      "durationMs": 2040,
+      "fps": 30,
+      "bytes": {
+        "mp4": 25895
+      },
+      "sha256": {
+        "mp4": "21150c72b5acdf4068ac77b90ad4a860106e7377fb261d10f43d891122c5bf27"
+      },
+      "sourceSha256": "827d8960375851a1e1163832574259abaef2f4283dcb0323ea8921cf4a99461a",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 0.22854817708333333,
+        "stepP90": 0.4072265625,
+        "seam": 0.34765625
+      }
+    },
+    {
+      "id": "idzxwf54mzs11",
+      "sources": [
+        {
+          "src": "clips/idzxwf54mzs11.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 322,
+      "height": 322,
+      "durationMs": 2130,
+      "fps": 30,
+      "bytes": {
+        "mp4": 64440
+      },
+      "sha256": {
+        "mp4": "8b086ae9cf50988705f23b08b4f89060a3f844887966dbdc23e9cc0813521e0f"
+      },
+      "sourceSha256": "38b469d3b7c165195c31bc61071de59c76a3955eeb04a3d3a847a5ec243a4376",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 3.8235987103174605,
+        "stepP90": 6.3896484375,
+        "seam": 2.451171875
+      }
+    },
+    {
+      "id": "j0i4jvs5ezu21",
+      "sources": [
+        {
+          "src": "clips/j0i4jvs5ezu21.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 278,
+      "durationMs": 1190,
+      "fps": 30,
+      "bytes": {
+        "mp4": 28614
+      },
+      "sha256": {
+        "mp4": "0ad7084fbaeca5c5d2ece0ee8c7d0e2e59a417211c4e8151012687d81999c782"
+      },
+      "sourceSha256": "9b4f48c2ee00758df520190134a5cb7e0621c405abb52cd42c5c2de4ae9ad3b0",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 0.8498046875,
+        "stepP90": 1.41796875,
+        "seam": 1.1337890625
+      }
+    },
+    {
+      "id": "lgs9hva1ur251",
+      "sources": [
+        {
+          "src": "clips/lgs9hva1ur251.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 480,
+      "durationMs": 1300,
+      "fps": 30,
+      "bytes": {
+        "mp4": 48208
+      },
+      "sha256": {
+        "mp4": "0dfd28b952ae8602504ddb05d470581a648d12ecab2ecee7ab8469c848ac937f"
+      },
+      "sourceSha256": "9034625a378f2b955a481fc32a74d998cda8273b701f82298d7104c9fd75daf7",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 2.0974763569078947,
+        "stepP90": 2.3623046875,
+        "seam": 2.0927734375
+      }
+    },
+    {
+      "id": "oRpC01nGe_B4YY2ll6-bYss-Sjm4L9KOgsAcoFivDMU",
+      "sources": [
+        {
+          "src": "clips/oRpC01nGe_B4YY2ll6-bYss-Sjm4L9KOgsAcoFivDMU.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 270,
+      "durationMs": 2360,
+      "fps": 25,
+      "bytes": {
+        "mp4": 189438
+      },
+      "sha256": {
+        "mp4": "ece12045b171115a4ae8afc60a42ba85634edd1ac27d2bda890a1160d1e9c5fb"
+      },
+      "sourceSha256": "0c02c1e79bad9293815b8117827441fdeb9ab3b9e39aaae4ae2f3d68faa94351",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 14.212486530172415,
+        "stepP90": 20.544921875,
+        "seam": 11.609375
+      }
+    },
+    {
+      "id": "prn9uofmyz731",
+      "sources": [
+        {
+          "src": "clips/prn9uofmyz731.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 270,
+      "durationMs": 1530,
+      "fps": 30,
+      "bytes": {
+        "mp4": 40129
+      },
+      "sha256": {
+        "mp4": "ecb59659147b881ffd28f33dedf63aa07e8be34db796f1f57280401760cfb7a8"
+      },
+      "sourceSha256": "f97b6c1d320eec885d5ccf610bdc91004ca6b7dc0e602fe317760db6b4c0fa2b",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 2.416427951388889,
+        "stepP90": 3.466796875,
+        "seam": 2.6572265625
+      }
+    },
+    {
+      "id": "tXHw0yKmzKN5vXVLrLj9zY54aaF2A93aP65NKNaIJNQ",
+      "sources": [
+        {
+          "src": "clips/tXHw0yKmzKN5vXVLrLj9zY54aaF2A93aP65NKNaIJNQ.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 480,
+      "durationMs": 455,
+      "fps": 30,
+      "bytes": {
+        "mp4": 40790
+      },
+      "sha256": {
+        "mp4": "c92fea28521c3e979516e389389763e9604e41be6aa78f47f7a15d62bb26d5d5"
+      },
+      "sourceSha256": "fdf2257b8473c50f7f1b911f1af7cbe7caeb1fef05a1a2603f2904229db41066",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 30,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 0.5157001201923077,
+        "stepP90": 0.837890625,
+        "seam": 1.3388671875,
+        "flag": "review"
+      }
+    },
+    {
+      "id": "u3dob97sw2421",
+      "sources": [
+        {
+          "src": "clips/u3dob97sw2421.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 320,
+      "height": 400,
+      "durationMs": 12150,
+      "fps": 30,
+      "bytes": {
+        "mp4": 430452
+      },
+      "sha256": {
+        "mp4": "025c20cd2f1a73ec2fd188ee4fde10b75a092add52bb74ff8b2564cf9c00214c"
+      },
+      "sourceSha256": "c0c09a6923f32a8cfb5655362ba638f33bc09a63781e9dc256e9423e28332eec",
+      "encode": {
+        "codec": "x264",
+        "crf": 30,
+        "longSide": 400,
+        "fpsCap": 30,
+        "note": "budget-exceeded"
+      },
+      "loopSeam": {
+        "stepMean": 13.527917882898352,
+        "stepP90": 29.47265625,
+        "seam": 28.8125
+      }
+    },
+    {
+      "id": "uusyyyz8bnu21",
+      "sources": [
+        {
+          "src": "clips/uusyyyz8bnu21.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 300,
+      "height": 154,
+      "durationMs": 3760,
+      "fps": 12.5,
+      "bytes": {
+        "mp4": 86721
+      },
+      "sha256": {
+        "mp4": "44dadb6947e12e014679c63e7187b48beea51b46ac6a28a08e679ff159f7f39c"
+      },
+      "sourceSha256": "f4b51dc24610dedee3b7a496cfbeed51ab0b45d9512b3270f6139a2009e5eb59",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 12.5,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 11.14514690896739,
+        "stepP90": 15.03515625,
+        "seam": 10.6865234375
+      }
+    },
+    {
+      "id": "vanr0eqxbwt21",
+      "sources": [
+        {
+          "src": "clips/vanr0eqxbwt21.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 254,
+      "durationMs": 1360,
+      "fps": 25,
+      "bytes": {
+        "mp4": 69016
+      },
+      "sha256": {
+        "mp4": "8110bfd0a2d6bb1e9707c9a0484804e5eb852c9123aadd4c17892efff1f91ced"
+      },
+      "sourceSha256": "d0ef745632259d97add20bb072f1c9ffe697ffe2e103b387174ec77232899d75",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 3.0535333806818183,
+        "stepP90": 3.796875,
+        "seam": 3.0146484375
+      }
+    },
+    {
+      "id": "vvuzmt9zmec31",
+      "sources": [
+        {
+          "src": "clips/vvuzmt9zmec31.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 292,
+      "durationMs": 3260,
+      "fps": 9.816,
+      "bytes": {
+        "mp4": 24606
+      },
+      "sha256": {
+        "mp4": "b3d25def88afc9566d2d22cb68906ce0a5e4ed7cb969fa6983559f64c7403b33"
+      },
+      "sourceSha256": "73bd7fbccf2a87ab923abaad0b308fca1f1addd7fde9e104f99c04dc17ce332b",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 9.816,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 1.1764427923387097,
+        "stepP90": 4.001953125,
+        "seam": 0.1181640625
+      }
+    },
+    {
+      "id": "wsijo3cpfb831",
+      "sources": [
+        {
+          "src": "clips/wsijo3cpfb831.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 460,
+      "height": 460,
+      "durationMs": 3750,
+      "fps": 24,
+      "bytes": {
+        "mp4": 254387
+      },
+      "sha256": {
+        "mp4": "031e150056df41959fb6fbfc573a40b00ec317fc2f7c0884a5490d8e636f677a"
+      },
+      "sourceSha256": "bef2d0faf6350ad8fb5d5bb9072ba3d0fe5badbaf1645878352122c8c178b961",
+      "encode": {
+        "codec": "x264",
+        "crf": 27,
+        "longSide": 480,
+        "fpsCap": 24,
+        "note": "budget-adapted"
+      },
+      "loopSeam": {
+        "stepMean": 1.688915466994382,
+        "stepP90": 2.0751953125,
+        "seam": 0.8505859375
+      }
+    },
+    {
+      "id": "y3aywjhnqr641",
+      "sources": [
+        {
+          "src": "clips/y3aywjhnqr641.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 480,
+      "height": 360,
+      "durationMs": 4080,
+      "fps": 25,
+      "bytes": {
+        "mp4": 192357
+      },
+      "sha256": {
+        "mp4": "638e33413555bac5667f72ad00f73b2004728d8f5f9e49ead61986ed4f808414"
+      },
+      "sourceSha256": "32e2d11e0c6d2d27892a5a008ce4819cf2680cb785aa69620010b9baa96242dc",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 25,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 3.5130627320544554,
+        "stepP90": 4.8720703125,
+        "seam": 3.6552734375
+      }
+    },
+    {
+      "id": "zzJvvlxWajW38krS7Dh7n3fIHXU-WSs0IM1UTXXJzcQ",
+      "sources": [
+        {
+          "src": "clips/zzJvvlxWajW38krS7Dh7n3fIHXU-WSs0IM1UTXXJzcQ.mp4",
+          "type": "video/mp4; codecs=avc1.4d401e"
+        }
+      ],
+      "width": 400,
+      "height": 298,
+      "durationMs": 5940,
+      "fps": 16.667,
+      "bytes": {
+        "mp4": 162676
+      },
+      "sha256": {
+        "mp4": "2c2d805f0f46261dff512b6afe90eab01bbf891fbadafbdea9e2ee9e3b5a6304"
+      },
+      "sourceSha256": "d53cd0d0e9d1adbc060ff5faf8daaa970525be3677f9fffe089548f8060c2c68",
+      "encode": {
+        "codec": "x264",
+        "crf": 26,
+        "longSide": 480,
+        "fpsCap": 16.667,
+        "note": "base"
+      },
+      "loopSeam": {
+        "stepMean": 3.628607302295918,
+        "stepP90": 10.2744140625,
+        "seam": 1.423828125
+      }
+    }
+  ]
+}

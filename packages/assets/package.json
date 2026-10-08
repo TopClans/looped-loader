@@ -1,0 +1,18 @@
+{
+  "name": "@topclans/looped-loader-assets",
+  "version": "0.1.0",
+  "description": "Perfectly looped clips and manifest for looped-loader",
+  "license": "SEE LICENSE IN NOTICE",
+  "type": "module",
+  "files": ["clips", "manifest.json", "checksums.json", "LICENSE", "NOTICE"],
+  "exports": {
+    "./manifest.json": "./manifest.json",
+    "./clips/*": "./clips/*"
+  },
+  "scripts": {
+    "build": "node scripts/verify.mjs",
+    "test": "node scripts/verify.mjs",
+    "typecheck": "node --check scripts/verify.mjs"
+  },
+  "publishConfig": { "access": "public" }
+}

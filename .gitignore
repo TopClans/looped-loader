@@ -33,3 +33,6 @@ packages/assets/NOTICE
 # integration checkout.
 .worktrees/
 .waves/
+
+# transcode scratch space
+packages/assets/.work/
