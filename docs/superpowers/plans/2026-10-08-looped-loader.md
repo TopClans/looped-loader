@@ -699,7 +699,7 @@ git commit -m "feat(core): workspace skeleton, licences and the deterministic cl
 - Consumes: `Clip`, `ClipSource`, `Manifest` from `./pool.js`; `LoopedLoaderError` from `./errors.js` (Task 1).
 - Produces: `parseManifest(input: unknown): Manifest`, `resolveSrc(baseUrl: string, src: string): string`, `buildPool(manifest: Manifest, options?: { clip?: string; clips?: string[] }): Clip[]`. Task 3 calls all three; Tasks 7 and 9 rely on `parseManifest` rejecting a broken manifest with code `manifest-invalid`.
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `packages/core/test/manifest.test.ts` — the baseUrl and malformed-manifest cases are Review Focus items 1 and 3, so they are the first tests written, not an afterthought:
 
@@ -809,13 +809,13 @@ describe('buildPool', () => {
 })
 ```
 
-- [ ] **Step 2: Run the tests and confirm they fail**
+- [x] **Step 2: Run the tests and confirm they fail**
 
 Run: `pnpm --filter @topclans/looped-loader-core test`
 
 Expected: FAIL — `Failed to resolve import "../src/manifest.js"`.
 
-- [ ] **Step 3: Implement manifest.ts**
+- [x] **Step 3: Implement manifest.ts**
 
 ```ts
 import { LoopedLoaderError } from './errors.js'
@@ -839,23 +839,23 @@ const isFiniteNumber = (value: unknown): value is number =>
   typeof value === 'number' && Number.isFinite(value)
 
 function parseSource(value: unknown, clipId: string, index: number): ClipSource {
-  if (typeof value !== 'object' || value === null) invalid(`clip "${clipId}" source ${index} is not an object`)
+  if (typeof value !== 'object' || value === null) throw invalid(`clip "${clipId}" source ${index} is not an object`)
   const source = value as Record<string, unknown>
-  if (typeof source.src !== 'string' || source.src === '') invalid(`clip "${clipId}" source ${index} has no src`)
-  if (typeof source.type !== 'string' || source.type === '') invalid(`clip "${clipId}" source ${index} has no type`)
+  if (typeof source.src !== 'string' || source.src === '') throw invalid(`clip "${clipId}" source ${index} has no src`)
+  if (typeof source.type !== 'string' || source.type === '') throw invalid(`clip "${clipId}" source ${index} has no type`)
   return { src: source.src as string, type: source.type as string }
 }
 
 function parseClip(value: unknown): Clip {
-  if (typeof value !== 'object' || value === null) invalid('a clip entry is not an object')
+  if (typeof value !== 'object' || value === null) throw invalid('a clip entry is not an object')
   const raw = value as Record<string, unknown>
   const id = raw.id
-  if (typeof id !== 'string' || id === '') invalid('a clip entry has no id')
-  if (!Array.isArray(raw.sources) || raw.sources.length === 0) invalid(`clip "${id}" has no sources`)
-  if (!isFiniteNumber(raw.width) || raw.width <= 0) invalid(`clip "${id}" has an invalid width`)
-  if (!isFiniteNumber(raw.height) || raw.height <= 0) invalid(`clip "${id}" has an invalid height`)
-  if (!isFiniteNumber(raw.durationMs) || raw.durationMs < 0) invalid(`clip "${id}" has an invalid durationMs`)
-  if (!isFiniteNumber(raw.fps) || raw.fps <= 0) invalid(`clip "${id}" has an invalid fps`)
+  if (typeof id !== 'string' || id === '') throw invalid('a clip entry has no id')
+  if (!Array.isArray(raw.sources) || raw.sources.length === 0) throw invalid(`clip "${id}" has no sources`)
+  if (!isFiniteNumber(raw.width) || raw.width <= 0) throw invalid(`clip "${id}" has an invalid width`)
+  if (!isFiniteNumber(raw.height) || raw.height <= 0) throw invalid(`clip "${id}" has an invalid height`)
+  if (!isFiniteNumber(raw.durationMs) || raw.durationMs < 0) throw invalid(`clip "${id}" has an invalid durationMs`)
+  if (!isFiniteNumber(raw.fps) || raw.fps <= 0) throw invalid(`clip "${id}" has an invalid fps`)
 
   const clip: Clip = {
     id,
@@ -868,8 +868,8 @@ function parseClip(value: unknown): Clip {
   if (isRecordOfNumbers(raw.bytes)) clip.bytes = raw.bytes
   if (isRecordOfStrings(raw.sha256)) clip.sha256 = raw.sha256
   if (typeof raw.sourceSha256 === 'string') clip.sourceSha256 = raw.sourceSha256
-  if (raw.encode && typeof raw.encode === 'object') clip.encode = raw.encode as Clip['encode']
-  if (raw.loopSeam && typeof raw.loopSeam === 'object') clip.loopSeam = raw.loopSeam as Clip['loopSeam']
+  if (raw.encode && typeof raw.encode === 'object') clip.encode = raw.encode as NonNullable<Clip['encode']>
+  if (raw.loopSeam && typeof raw.loopSeam === 'object') clip.loopSeam = raw.loopSeam as NonNullable<Clip['loopSeam']>
   return clip
 }
 
@@ -894,18 +894,18 @@ function isRecordOfStrings(value: unknown): value is Record<string, string> {
  * Unknown fields are how the manifest schema grows without a breaking change.
  */
 export function parseManifest(input: unknown): Manifest {
-  if (typeof input !== 'object' || input === null) invalid('manifest is not an object')
+  if (typeof input !== 'object' || input === null) throw invalid('manifest is not an object')
   const raw = input as Record<string, unknown>
-  if (!Array.isArray(raw.clips)) invalid('manifest.clips must be an array')
+  if (!Array.isArray(raw.clips)) throw invalid('manifest.clips must be an array')
   const clips = (raw.clips as unknown[]).map(parseClip)
-  if (clips.length === 0) invalid('manifest.clips is empty')
+  if (clips.length === 0) throw invalid('manifest.clips is empty')
 
   const manifest: Manifest = {
     schemaVersion: isFiniteNumber(raw.schemaVersion) ? raw.schemaVersion : 1,
     clips,
   }
   if (typeof raw.generatedBy === 'string') manifest.generatedBy = raw.generatedBy
-  if (raw.corpus && typeof raw.corpus === 'object') manifest.corpus = raw.corpus as Manifest['corpus']
+  if (raw.corpus && typeof raw.corpus === 'object') manifest.corpus = raw.corpus as NonNullable<Manifest['corpus']>
   return manifest
 }
 
@@ -933,7 +933,7 @@ export function buildPool(manifest: Manifest, options: { clip?: string; clips?: 
 }
 ```
 
-- [ ] **Step 4: Export the new API and run the tests**
+- [x] **Step 4: Export the new API and run the tests**
 
 Add to `packages/core/src/index.ts`:
 
@@ -945,7 +945,7 @@ Run: `pnpm --filter @topclans/looped-loader-core test`
 
 Expected: PASS — Task 1's 10 tests plus Task 2's, with the 12 malformed-manifest cases each reported individually.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add packages/core/src/manifest.ts packages/core/src/index.ts packages/core/test/manifest.test.ts
@@ -1548,7 +1548,7 @@ git commit -m "feat(core): loader state machine, video lifecycle and failure pat
 
 Encoding is pinned to `-threads 1` deliberately: x264's output depends on the thread count, and without this a `--check` run on another machine would report phantom differences that look like corruption.
 
-- [ ] **Step 1: Create the tools package**
+- [x] **Step 1: Create the tools package**
 
 `tools/transcode/package.json`:
 
@@ -1598,7 +1598,7 @@ Add the workspace script to the root `package.json` (it builds first, because `t
 "transcode": "pnpm --filter @topclans/looped-loader-tools build && node tools/transcode/dist/index.js"
 ```
 
-- [ ] **Step 2: Write the failing tests**
+- [x] **Step 2: Write the failing tests**
 
 `tools/transcode/test/plan.test.ts`:
 
@@ -1725,13 +1725,13 @@ describe('encodeArgs', () => {
 })
 ```
 
-- [ ] **Step 3: Run the tests and confirm they fail**
+- [x] **Step 3: Run the tests and confirm they fail**
 
 Run: `pnpm install && pnpm --filter @topclans/looped-loader-tools test`
 
 Expected: FAIL — `Failed to resolve import "../src/plan.js"`.
 
-- [ ] **Step 4: Implement plan.ts**
+- [x] **Step 4: Implement plan.ts**
 
 ```ts
 export interface ProbeInfo {
@@ -1815,13 +1815,13 @@ export function encodeArgs(plan: EncodePlan, input: string, output: string): str
 }
 ```
 
-- [ ] **Step 5: Run the tests and confirm they pass**
+- [x] **Step 5: Run the tests and confirm they pass**
 
 Run: `pnpm --filter @topclans/looped-loader-tools test`
 
 Expected: PASS.
 
-- [ ] **Step 6: Implement the ffmpeg process layer**
+- [x] **Step 6: Implement the ffmpeg process layer**
 
 `tools/transcode/src/ffmpeg.ts` — no unit tests here on purpose; Task 5's integration test drives every function below against a generated fixture.
 
@@ -1959,12 +1959,12 @@ export function grayFrames(file: string, size = 32): Uint8Array {
 }
 ```
 
-- [ ] **Step 7: Type-check and commit**
+- [x] **Step 7: Type-check and commit**
 
 Run: `pnpm typecheck` — expect PASS.
 
 ```bash
-git add tools/transcode package.json
+git add tools/transcode package.json pnpm-lock.yaml
 git commit -m "feat(tools): transcode planning ladder and the ffmpeg process layer"
 ```
 
@@ -3079,7 +3079,7 @@ Expected: `vite build` writes `dist/index.js` and the CSS, `vue-tsc` writes `dis
 - [ ] **Step 5: Commit**
 
 ```bash
-git add packages/vue
+git add packages/vue pnpm-lock.yaml
 git commit -m "feat(vue): LoopedLoader component, composables and theming"
 ```
 
@@ -3614,7 +3614,7 @@ Expected: the dev server prints a URL; open it and confirm the contact sheet sho
 Run: `pnpm typecheck` — expect PASS.
 
 ```bash
-git add packages/demo .gitignore
+git add packages/demo .gitignore pnpm-lock.yaml
 git commit -m "feat(demo): contact sheet and scenario board for visual verification"
 ```
 

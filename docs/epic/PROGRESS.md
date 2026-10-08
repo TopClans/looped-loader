@@ -3,22 +3,22 @@
 The only place where story status lives. Update it at the close of every story, with
 evidence. Check it at the start of every session.
 
-**Current focus:** wave 2 — **E1.2** (`.worktrees/core`) and **E2.1** (`.worktrees/tools`) in parallel. E1.1 is done.
+**Current focus:** wave 3 — **E1.3** (`.worktrees/core`) and **E2.2** (`.worktrees/tools`) in parallel, each with a `MiniMax-M3` review. E1.1, E1.2 and E2.1 are done.
 **Baseline commit:** `a13b923` (spec, build plan and epic docs committed; no code yet).
-**Test baseline:** 10 tests across 2 files, established at the close of E1.1 (`ae91409`).
+**Test baseline:** 50 tests across 4 files on the integration branch after wave 2 (`acdc054`): core 32, tools 18.
 
 ## Status
 
 | Id | Story | Status | Evidence | Notes |
 |---|---|---|---|---|
 | E1.1 | Workspace, licences, CI, picker | done | commit `ae91409`; `pnpm test` 10/10, `pnpm typecheck` green; `pnpm-lock.yaml` committed | 19 files, 1057 insertions; report `.waves/reports/E1.1.md` |
-| E1.2 | Manifest validation, URL resolution | in-progress | — | — |
-| E1.3 | Loader state machine, video lifecycle | todo | — | review-worthy |
+| E1.2 | Manifest validation, URL resolution | done | commit `d214a83`, merged `21d976c`; core 32/32 green, `pnpm typecheck` green | 2 plan defects found and fixed in the plan file (D-18); report `.waves/reports/E1.2.md` |
+| E1.3 | Loader state machine, video lifecycle | in-progress | — | review-worthy |
 | E1.4 | Vue adapter, composables, theming | todo | — | — |
 | E1.5 | Vue behaviour tests | todo | — | reduced-motion flip, autoplay rejection, SSR |
 | E1.6 | Demo playground | todo | — | needs E2.3 for real clips |
-| E2.1 | Transcode ladder, ffmpeg layer | in-progress | — | independent of E1 after E1.1 |
-| E2.2 | QC gate, manifest, CLI | todo | — | review-worthy |
+| E2.1 | Transcode ladder, ffmpeg layer | done | commit `ce6c313`, merged `acdc054`; tools 18/18 green, `pnpm typecheck` green | lockfile staged with the `@types/node` addition (D-19); report `.waves/reports/E2.1.md` |
+| E2.2 | QC gate, manifest, CLI | in-progress | — | review-worthy |
 | E2.3 | Corpus transcode, assets package | todo | — | **runs in the main checkout** (`gifs/` is untracked) |
 | E2.4 | Per-clip provenance in the manifest | todo | — | review-worthy; blocks E4.3 |
 | E3.1 | Browser verification with evidence | todo | — | main session only |
@@ -62,6 +62,8 @@ are not repeated here.
 | D-15 | Local npm upgraded 10.9.4 → **11.21.0**; `npm@latest` is 12.2.0 and refuses to install on this machine | npm 12 requires node `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` and the local node is exactly 22.22.0. npm 11.21.0 is above the 11.5.1 trusted-publishing floor and ships **`npm trust`**, so trusted publishers can be configured from the CLI (`npm trust github --file release.yml --repo TopClans/looped-loader --allow-publish`, then `npm trust list` to verify) instead of through the npmjs.com UI | 2026-10-08 |
 | D-16 | `.worktrees/` and `.waves/` are gitignored; a wave report lives at `.waves/reports/<story>.md`, outside every worktree and never committed | the report is completion evidence the Lead reads, not a deliverable; inside a worktree it would ride into that writer's own commit, and an untracked `.worktrees/` in the integration checkout makes `git status` unreadable | 2026-10-08 |
 | D-17 | Wave 1 ran Task 1 in the main checkout on `feat/looped-loader`, as the plan's `Start` section directs, and it is the only task besides Task 6 with no worktree | Task 1 creates the workspace every later worktree branches from, so there is nothing to branch from until it lands; the runbook's isolation rule starts at Task 2 | 2026-10-08 |
+| D-18 | The plan's Task 2 `manifest.ts` block was wrong twice and is corrected in the plan file: 13 `invalid(...)` calls were bare statements that never threw, and three `as Clip[...]` / `as Manifest[...]` casts fail under `exactOptionalPropertyTypes` | the plan's own tests fail 12/12 and `pnpm typecheck` fails with the block verbatim — observed, not assumed. Blast radius: every story that consumes `parseManifest` (E1.3, E1.4, E1.5, E1.6, E3.2, E3.4) and any later reader who copies the block | 2026-10-08 |
+| D-19 | The plan's Task 4, 7 and 9 commit lists omitted `pnpm-lock.yaml`; all three are corrected in the plan file | adding `@types/node` (T4), the Vue toolchain (T7) and the demo's deps (T9) rewrites the root lockfile, and CI installs with `--frozen-lockfile`, so the plan as written turns the first push red for a reason that looks nothing like its cause | 2026-10-08 |
 
 ## Technical debt and open items
 
@@ -105,3 +107,4 @@ what actually happened, as opposed to what was planned.
 |---|---|---|
 | 2026-10-08 | brainstorm → spec → build plan → epic, runbook, tracker | repo created (private), spec and plan committed; 10 plan defects found and fixed in review; no code yet |
 | 2026-10-08 | wave 1 — E1.1 | subagent run started; workers `glm-5.3-flash`, reviewers `MiniMax-M3`; E1.1 `done` at `ae91409` (10 tests green, lockfile committed), wave 2 dispatched |
+| 2026-10-08 | wave 2 — E1.2 + E2.1 | both `done` (`d214a83`, `ce6c313`) and merged (`21d976c`, `acdc054`); integration branch 50/50 tests, typecheck and build green; 2 plan defects fixed (D-18, D-19); wave 3 dispatched |
