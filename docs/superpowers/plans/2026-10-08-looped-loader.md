@@ -3759,6 +3759,17 @@ git commit -m "docs: usage, recipes, accessibility and the licensing boundary"
 
 ## Task 12: Release — dry runs, owner-gated publish, public flip
 
+> **Revised by the open-source plan.**
+> `docs/superpowers/plans/2026-10-08-looped-loader-oss-readiness.md` Task 9 replaces the
+> local publish below with a tag-triggered GitHub Actions release using npm trusted
+> publishing, which removes the long-lived npm token from the project entirely. Read that
+> task before running this one: if it is done, Steps 2–4 here collapse into "bump the
+> version in lockstep, push a `v0.1.0` tag, watch the workflow". The local path below stays
+> as the fallback for the case where trusted publishing turns out to require an
+> already-published package (that task's Step 1 resolves the question with `npm trust
+> --dry-run`). Going public is Task 8 of the open-source plan, and it must happen before a
+> release can carry provenance — npm does not generate it for private repositories.
+
 **Files:**
 - Create: `CHANGELOG.md`
 - Modify: `packages/*/package.json` (only `version`, kept in lockstep)
