@@ -1,5 +1,6 @@
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { basename, join, resolve } from 'node:path'
+import { pathToFileURL } from 'node:url'
 import { ffmpegVersion, grayFrames, hasFfmpeg, probeClip, runEncode, runLosslessReference, ssimOf } from './ffmpeg.js'
 import { buildManifest, sha256File, type ClipEntry } from './manifest.js'
 import { escalate, initialPlan, BUDGET_BYTES, type EncodePlan, type ProbeInfo } from './plan.js'
@@ -26,14 +27,8 @@ export function parseArgs(argv: string[]): Options {
 }
 
 /** Encodes, then walks the budget ladder until the clip fits or the ladder is spent. */
-function encodeToBudget(
-  id: string,
-  source: string,
-  clipsDir: string,
-  info: ProbeInfo,
-): { plan: EncodePlan; output: string; exhausted: boolean } {
+function encodeToBudget(source: string, output: string, info: ProbeInfo): { plan: EncodePlan; exhausted: boolean } {
   let plan: EncodePlan = initialPlan(info)
-  const output = join(clipsDir, `${id}.mp4`)
   let exhausted = false
   for (;;) {
     runEncode(plan, source, output)
@@ -46,125 +41,167 @@ function encodeToBudget(
     }
     plan = next
   }
-  return { plan, output, exhausted }
+  return { plan, exhausted }
 }
 
 export async function main(argv: string[]): Promise<number> {
-  if (!hasFfmpeg()) {
-    console.error('ffmpeg is required and was not found in PATH')
-    return 2
-  }
-  const options = parseArgs(argv)
-  const gifsDir = resolve(options.gifs)
-  const outDir = resolve(options.out)
-  const clipsDir = join(outDir, 'clips')
-  const workDir = join(outDir, '.work')
-  mkdirSync(clipsDir, { recursive: true })
-  mkdirSync(workDir, { recursive: true })
+  let workDir: string | undefined
+  const writtenClips: string[] = []
+  try {
+    if (!hasFfmpeg()) {
+      console.error('ffmpeg is required and was not found in PATH')
+      return 2
+    }
+    const options = parseArgs(argv)
+    const gifsDir = resolve(options.gifs)
+    const outDir = resolve(options.out)
+    const clipsDir = join(outDir, 'clips')
+    workDir = join(outDir, '.work')
 
-  const generators = readdirSync(gifsDir).filter((name) => name.endsWith('.mp4'))
-  const selected = options.only.length > 0 ? generators.filter((name) => options.only.includes(basename(name, '.mp4'))) : generators
-
-  const entries: ClipEntry[] = []
-  const seams = new Map<string, ReturnType<typeof seamMetrics>>()
-  const findings: QcFinding[] = []
-  const notes: string[] = []
-
-  for (const name of selected.sort()) {
-    const id = basename(name, '.mp4')
-    const source = join(gifsDir, name)
-    const info = probeClip(source)
-    const { plan, output, exhausted } = encodeToBudget(id, source, clipsDir, info)
-
-    const reference = join(workDir, `${id}.ref.mp4`)
-    runLosslessReference(plan, source, reference)
-    const encodedInfo = probeClip(output)
-    const ssim = ssimOf(output, reference)
-    const seamInput = seamMetrics(grayFrames(source), 32 * 32)
-    const seamOutput = seamMetrics(grayFrames(output), 32 * 32)
-    const expectedFrames = Math.round((info.durationMs / 1000) * plan.fps)
-
-    const clipFindings = checkClip({
-      id,
-      expectedFrames,
-      actualFrames: encodedInfo.frames,
-      expectedDurationMs: info.durationMs,
-      actualDurationMs: encodedInfo.durationMs,
-      bytes: readFileSync(output).length,
-      budgetBytes: BUDGET_BYTES,
-      budgetExhausted: exhausted,
-      ssim,
-      seamInput,
-      seamOutput,
-    })
-    findings.push(...clipFindings)
-    seams.set(id, seamOutput)
-    if (plan.note !== 'base') notes.push(`${id}: ${plan.note} (crf ${plan.crf}, long side ${plan.longSide})`)
-
-    entries.push({
-      id,
-      sourcePath: source,
-      outputPath: output,
-      plan,
-      width: plan.width,
-      height: plan.height,
-      durationMs: info.durationMs,
-      fps: plan.fps,
-      frames: encodedInfo.frames,
-      bytes: readFileSync(output).length,
-    })
-  }
-
-  const generatedBy = `looped-loader-tools/0.1.0 ffmpeg ${ffmpegVersion()}`
-  const manifest = buildManifest(entries, generatedBy, seams)
-  const manifestPath = join(outDir, 'manifest.json')
-  const checksumsPath = join(outDir, 'checksums.json')
-
-  if (options.check) {
-    const previous = JSON.parse(readFileSync(manifestPath, 'utf8')) as typeof manifest
-    const differences = manifest.clips.filter((clip, index) => {
-      const before = previous.clips[index]
-      return !before || before.sha256.mp4 !== clip.sha256.mp4 || before.bytes.mp4 !== clip.bytes.mp4
-    })
-    writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
-    rmSync(workDir, { recursive: true, force: true })
-    if (differences.length > 0) {
-      console.error(`--check failed: ${differences.length} clip(s) differ from the committed manifest`)
+    if (!existsSync(gifsDir) || !statSync(gifsDir).isDirectory()) {
+      console.error(`--gifs ${gifsDir} is not a readable directory`)
       return 1
     }
-    console.log(`--check passed: ${manifest.clips.length} clips are byte-identical`)
-    return 0
+    const generators = readdirSync(gifsDir).filter((name) => name.endsWith('.mp4'))
+    const selected = options.only.length > 0 ? generators.filter((name) => options.only.includes(basename(name, '.mp4'))) : generators
+    if (selected.length === 0) {
+      const wanted = options.only.length > 0 ? ` matching --only ${options.only.join(',')}` : ''
+      console.error(`no .mp4 inputs found in ${gifsDir}${wanted}; refusing to write an empty manifest`)
+      return 1
+    }
+
+    mkdirSync(clipsDir, { recursive: true })
+    mkdirSync(workDir, { recursive: true })
+
+    const entries: ClipEntry[] = []
+    const seams = new Map<string, ReturnType<typeof seamMetrics>>()
+    const findings: QcFinding[] = []
+    const notes: string[] = []
+
+    for (const name of selected.sort()) {
+      const id = basename(name, '.mp4')
+      const source = join(gifsDir, name)
+      const output = join(clipsDir, `${id}.mp4`)
+      writtenClips.push(output)
+      const info = probeClip(source)
+      const { plan, exhausted } = encodeToBudget(source, output, info)
+
+      const reference = join(workDir, `${id}.ref.mp4`)
+      runLosslessReference(plan, source, reference)
+      const encodedInfo = probeClip(output)
+      const ssim = ssimOf(output, reference)
+      const seamInput = seamMetrics(grayFrames(source), 32 * 32)
+      const seamOutput = seamMetrics(grayFrames(output), 32 * 32)
+      const expectedFrames = Math.round((info.durationMs / 1000) * plan.fps)
+
+      const clipFindings = checkClip({
+        id,
+        expectedFrames,
+        actualFrames: encodedInfo.frames,
+        expectedDurationMs: info.durationMs,
+        actualDurationMs: encodedInfo.durationMs,
+        bytes: readFileSync(output).length,
+        budgetBytes: BUDGET_BYTES,
+        budgetExhausted: exhausted,
+        ssim,
+        seamInput,
+        seamOutput,
+      })
+      findings.push(...clipFindings)
+      seams.set(id, seamOutput)
+      if (plan.note !== 'base') notes.push(`${id}: ${plan.note} (crf ${plan.crf}, long side ${plan.longSide})`)
+
+      entries.push({
+        id,
+        sourcePath: source,
+        outputPath: output,
+        plan,
+        width: plan.width,
+        height: plan.height,
+        durationMs: info.durationMs,
+        fps: plan.fps,
+        frames: encodedInfo.frames,
+        bytes: readFileSync(output).length,
+      })
+    }
+
+    const generatedBy = `looped-loader-tools/0.1.0 ffmpeg ${ffmpegVersion()}`
+    const manifest = buildManifest(entries, generatedBy, seams)
+    const manifestPath = join(outDir, 'manifest.json')
+    const checksumsPath = join(outDir, 'checksums.json')
+
+    if (options.check) {
+      if (!existsSync(manifestPath)) throw new Error(`no committed manifest at ${manifestPath}; run once without --check to create it`)
+      const previous = JSON.parse(readFileSync(manifestPath, 'utf8')) as typeof manifest
+      const previousById = new Map<string, (typeof previous.clips)[number]>(previous.clips.map((clip) => [clip.id, clip]))
+      const currentIds = new Set(manifest.clips.map((clip) => clip.id))
+      const changed = manifest.clips.filter((clip) => {
+        const before = previousById.get(clip.id)
+        return !before || before.sha256.mp4 !== clip.sha256.mp4 || before.bytes.mp4 !== clip.bytes.mp4
+      })
+      const removed = previous.clips.filter((clip) => !currentIds.has(clip.id))
+      writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
+      rmSync(workDir, { recursive: true, force: true })
+      // A clip-count mismatch always lands here: an id the committed manifest
+      // lacks surfaces in `changed`, an id the current run lacks in `removed`.
+      if (manifest.clips.length === 0 || changed.length > 0 || removed.length > 0) {
+        console.error(`--check failed: ${changed.length} clip(s) changed or new, ${removed.length} clip(s) removed, ${manifest.clips.length} current vs ${previous.clips.length} committed`)
+        return 1
+      }
+      console.log(`--check passed: ${manifest.clips.length} clips are byte-identical`)
+      return 0
+    }
+
+    // A full run owns the whole clips/ tree, so files the corpus no longer
+    // selects are orphans and get pruned. A partial --only refresh must never
+    // delete the rest of the corpus.
+    if (options.only.length === 0) {
+      const selectedIds = new Set(selected.map((name) => basename(name, '.mp4')))
+      let pruned = 0
+      for (const name of readdirSync(clipsDir)) {
+        if (!name.endsWith('.mp4') || selectedIds.has(basename(name, '.mp4'))) continue
+        rmSync(join(clipsDir, name), { force: true })
+        pruned += 1
+      }
+      if (pruned > 0) console.log(`pruned ${pruned} orphan clip(s) from ${clipsDir}`)
+    }
+
+    writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
+    writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
+    writeFileSync(join(outDir, 'qc-report.json'), `${JSON.stringify({ findings, notes, totalBytes: manifest.corpus.totalBytes }, null, 2)}\n`)
+
+    const errors = findings.filter((finding) => finding.level === 'error')
+    const reviews = findings.filter((finding) => finding.level === 'review')
+    const lines = [
+      '# Transcode QC report',
+      '',
+      `Clips: ${entries.length}  Total: ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB`,
+      '',
+      '## Errors',
+      ...(errors.length === 0 ? ['none'] : errors.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
+      '',
+      '## Review',
+      ...(reviews.length === 0 ? ['none'] : reviews.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
+      '',
+      '## Budget adaptations',
+      ...(notes.length === 0 ? ['none'] : notes.map((note) => `- ${note}`)),
+      '',
+    ]
+    writeFileSync(join(outDir, 'qc-report.md'), lines.join('\n'))
+    rmSync(workDir, { recursive: true, force: true })
+
+    console.log(`wrote ${entries.length} clips, ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB, ${errors.length} error(s), ${reviews.length} review(s)`)
+    return errors.length > 0 ? 1 : 0
+  } catch (error) {
+    const message = (error instanceof Error ? error.message : String(error)).replace(/\s*\r?\n\s*/g, ' ')
+    console.error(`transcode failed: ${message}`)
+    if (workDir !== undefined) rmSync(workDir, { recursive: true, force: true })
+    for (const file of writtenClips) rmSync(file, { force: true })
+    return 1
   }
-
-  writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
-  writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
-  writeFileSync(join(outDir, 'qc-report.json'), `${JSON.stringify({ findings, notes, totalBytes: manifest.corpus.totalBytes }, null, 2)}\n`)
-
-  const errors = findings.filter((finding) => finding.level === 'error')
-  const reviews = findings.filter((finding) => finding.level === 'review')
-  const lines = [
-    '# Transcode QC report',
-    '',
-    `Clips: ${entries.length}  Total: ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB`,
-    '',
-    '## Errors',
-    ...(errors.length === 0 ? ['none'] : errors.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
-    '',
-    '## Review',
-    ...(reviews.length === 0 ? ['none'] : reviews.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
-    '',
-    '## Budget adaptations',
-    ...(notes.length === 0 ? ['none'] : notes.map((note) => `- ${note}`)),
-    '',
-  ]
-  writeFileSync(join(outDir, 'qc-report.md'), lines.join('\n'))
-  rmSync(workDir, { recursive: true, force: true })
-
-  console.log(`wrote ${entries.length} clips, ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB, ${errors.length} error(s), ${reviews.length} review(s)`)
-  return errors.length > 0 ? 1 : 0
 }
 
-const invokedDirectly = process.argv[1]?.endsWith('index.js') ?? false
+const invokedDirectly = process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href
 if (invokedDirectly) {
   main(process.argv.slice(2)).then((code) => process.exit(code))
 }
