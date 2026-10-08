@@ -3,7 +3,7 @@
 The only place where story status lives. Update it at the close of every story, with
 evidence. Check it at the start of every session.
 
-**Current focus:** E3.2's fix round (stylesheet export + the spec §4.6 fade) in `.worktrees/docs`, then its re-review, then **E3.1** (browser verification) in the main session. E1.6 is merged at `2e0284e`.
+**Current focus:** **E3.1** (browser verification) in the main session, in its fix-and-re-verify cycle. E1.6 and E3.2 are merged; a core defect the browser found is being fixed in `.worktrees/core-fix` before the criterion can be met.
 **Baseline commit:** `a13b923` (spec, build plan and epic docs committed; no code yet).
 **Test baseline:** 109 automated tests on the integration branch after the Vue merge (`87bceed`) — core 49, tools 49, vue 11 under jsdom — plus the assets verifier, which reads the committed media rather than a fixture. Operational note: run `pnpm install` after **every** merge that touches the lockfile, or the newly merged package's own suite fails for want of its dependencies, which looks like a code failure and is not.
 
@@ -15,14 +15,14 @@ evidence. Check it at the start of every session.
 | E1.2 | Manifest validation, URL resolution | done | commit `d214a83`, merged `21d976c`; core 32/32 green, `pnpm typecheck` green | 2 plan defects found and fixed in the plan file (D-18); report `.waves/reports/E1.2.md` |
 | E1.3 | Loader state machine, video lifecycle | done | commit `ce50a1e`, merged `6c00bf6`; core 49/49 green, `pnpm typecheck` and `pnpm build` green | review `revise` (critical=1) → fix round → re-review `approve`; plan corrections D-20 |
 | E1.4 | Vue adapter, composables, theming | done | commit `b63bb53` in the merged range | build emits `index.js`, `index.d.ts` and `index.css`, both CSS selectors present; merged together with E1.5 at `87bceed` | held unmerged until E1.5 landed so `pnpm -r test` was never red |
-| E1.5 | Vue behaviour tests | done | commit `f847e8a`, merged `87bceed`; vue 11/11 green under jsdom, bundle 2.4 KB gzip of a 12 KB budget, `pnpm typecheck` green | review `approve` critical=0 minor=2 (TD-11, TD-12); the suite caught two real component defects (SSR emitted `<video>`; the video then never received `src`) — report `.waves/reports/E1.5-review.md` |
-| E1.6 | Demo playground | in-progress | — | needs E2.3 for real clips, which are now committed |
+| E1.5 | Vue behaviour tests | done | commit `f847e8a`, merged `87bceed`; vue 14/14 green after E3.2's two fixes, bundle 2.5 KB gzip of a 12 KB budget, `pnpm typecheck` green | review 1 `approve` critical=0 minor=2 (TD-11, TD-12) — the suite caught two real component defects (SSR emitted `<video>`; the video then never received `src`); review 2 on the follow-up changes `approve` critical=0 minor=1 (a hardening note: the `rounded` test reads the source, not the built CSS) — reports `.waves/reports/E1.5-review*.md` |
+| E1.6 | Demo playground | done | commit `6e495d8`, merged `2e0284e`; typecheck green over 5 packages | the browser found the layout defect the plan shipped (see E3.1); fixed in `c9db3ce`, merged `99db10b` |
 | E2.1 | Transcode ladder, ffmpeg layer | done | commit `ce6c313`, merged `acdc054`; tools 18/18 green, `pnpm typecheck` green | lockfile staged with the `@types/node` addition (D-19); report `.waves/reports/E2.1.md` |
 | E2.2 | QC gate, manifest, CLI | done | commit `f659786`, merged `e0a2158`; tools 46/46 green (0 skipped), `pnpm typecheck` and `pnpm build` green | review `revise` (critical=4) → fix round → re-review `approve` (10/12 new tests red on the old commit); D-21 in flight |
 | E2.3 | Corpus transcode, assets package | done | commit `1422349`; `wrote 32 clips, 3.86 MB, 0 error(s), 14 review(s)` exit 0; `--check passed: 32 clips are byte-identical`; verifier `assets verified: 32 clips, 3.86 MB`; tamper test went red then was restored from a backup | 41 files, 4 049 965 bytes ≤ 5 242 880; 27 `base` + 4 `budget-adapted` + 1 `budget-exceeded` (`u3dob97sw2421`, 430 452 B, SSIM 0.9493); report `.waves/reports/E2.3.md` |
 | E2.4 | Per-clip provenance in the manifest | todo | — | review-worthy; blocks E4.3 |
 | E3.1 | Browser verification with evidence | todo | — | main session only |
-| E3.2 | Documentation and recipes | in-progress | — | also owns the bounded `rounded` wiring fix (TD-11) |
+| E3.2 | Documentation and recipes | done | commit `bd4201f` + fix round `49e2b80`, merged `d1b8ef9`; vue 14/14, build and typecheck green; packed-tarball recipe verified in `$env:TEMP` | the fix round closed TD-11 and TD-13 and added the `./style.css` export (D-23); the CDN recipe stays marked unverified until E5.2 publishes |
 | E3.3 | Accessibility audit, `ACCESSIBILITY.md` | todo | — | — |
 | E3.4 | Public API surface lock, type tests | todo | — | — |
 | E3.5 | CI matrix and coverage thresholds | todo | — | blocks E5.1 |
@@ -83,9 +83,9 @@ are not repeated here.
 | TD-8 | The demo's `test` script is a no-op that says so; its acceptance is a browser run | E3.1 | accepted |
 | TD-9 | `clip.id` is not validated as URL-safe, in the CLI or in the core: a source file named `a b#c.mp4` becomes an un-fetchable `sources[].src` | E2.4 or E3.4 | open — flagged by the E2.2 review, deliberately deferred out of that story |
 | TD-10 | `qc-report.json` records findings but not the per-clip SSIM, so the plan's "SSIM within 0.01 of the floor" owner gate cannot be checked from the committed artefacts; the one budget-exceeded clip's SSIM (0.9493) was measured directly by the Lead and recorded in the wave log | E2.3 | open — not worth a re-run on its own; fold it into the next change that re-encodes |
-| TD-11 | The Vue `rounded` prop is declared and bound as a class, but no rule in the SFC targets it, so `rounded={false}` does nothing | E3.2 | being fixed in E3.2, because documenting a prop that does nothing would be worse than the defect |
+| TD-11 | The Vue `rounded` prop is declared and bound as a class, but no rule in the SFC targets it, so `rounded={false}` does nothing | E3.2 | **closed** in `49e2b80` — the radius moved under `.ll-rounded .ll-video` and a test pins it |
 | TD-12 | `autoplay-blocked` is emitted on every rejected `play()`, not once per loader; the spec's wording ("one retry, and `error('autoplay-blocked')") is singular and can be read either way | E1.5 | accepted — the review called it a defensible trade-off; the behaviour is now documented rather than changed |
-| TD-13 | Spec §4.6 promises the clip fades in over 150 ms; the plan's Task 7 never implemented it, so the plan omitted a spec requirement | E3.2 | being fixed in E3.2's fix round, together with the stylesheet export |
+| TD-13 | Spec §4.6 promises the clip fades in over 150 ms; the plan's Task 7 never implemented it, so the plan omitted a spec requirement | E3.2 | **closed** in `49e2b80` — a `ll-playing` class drives `opacity` over `var(--ll-fade-ms, 150ms)`, disabled under reduced motion |
 
 ## Baseline metrics
 
@@ -121,3 +121,4 @@ what actually happened, as opposed to what was planned.
 | 2026-10-08 | wave 4 — E1.4 done, E1.5 and the QC gate in flight | E1.4 `b63bb53` (unmerged by design so the suite never goes red); the real corpus reproduced at 3.86 MB with 6 noise-level seam errors and one budget-exceeded clip at SSIM 0.9493 — exactly what D-21 answers |
 | 2026-10-08 | wave 4 — E2.3 | assets transcoded in the main checkout at `1422349`: 32 clips, 4 049 965 bytes, 0 QC errors, 14 reviews, `--check` byte-identical, verifier green; the ACL was proven able to fail by tampering a sha256 and restoring it |
 | 2026-10-08 | wave 5 start — E1.4 + E1.5 merged, E1.6 and E3.2 dispatched | `87bceed`, integration branch 109 tests + verifier green, typecheck and build green (core 5.4/8 KB, vue 2.4/12 KB); the Vue survey found two real component defects and one inert prop |
+| 2026-10-08 | wave 5 — E1.6 + E3.2 merged; E3.1 opened | demo at `99db10b` after the manifest-layout fix `c9db3ce`; docs and the two bounded Vue fixes at `d1b8ef9`; 113 tests + verifier green; the browser then found a **core** race that kills half the loaders on a page with many instances — the reason E3.1 exists |
