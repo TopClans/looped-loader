@@ -1,0 +1,16 @@
+Looped Loader
+=============
+
+The code in this repository (packages/core, packages/vue, packages/demo,
+tools/transcode) is licensed under the MIT License; see LICENSE.
+
+The media in packages/assets — the clip files and manifest.json — is NOT
+covered by that licence. Those clips were collected from Reddit posts and are
+redistributed without a licence audit. Original authors and licences are
+unknown; the source files carried no attribution metadata. The copyright risk
+is explicitly accepted by the repository owner and recorded in
+docs/superpowers/specs/2026-10-08-looped-loader-design.md, section 9.
+
+If you hold the rights to a clip and want it removed, open an issue at
+https://github.com/TopClans/looped-loader/issues and it will be removed from
+the published package and from the repository.

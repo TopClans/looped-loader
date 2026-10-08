@@ -1,0 +1,14 @@
+{
+  "name": "looped-loader-workspace",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.15.1",
+  "engines": { "node": ">=20.11" },
+  "scripts": {
+    "build": "node scripts/sync-legal.mjs && pnpm -r build && node scripts/check-size.mjs",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "transcode": "pnpm --filter @topclans/looped-loader-tools transcode"
+  },
+  "devDependencies": { "typescript": "~5.9.3" }
+}
