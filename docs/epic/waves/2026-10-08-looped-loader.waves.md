@@ -13,3 +13,6 @@ Scope agreed with the owner: plan Tasks 1–11 plus Task 10 in the main session;
   workspace every later worktree branches from.
 - NOTE: report files live in `.waves/reports/<story>.md`, outside every worktree and never
   committed, so a writer's report cannot ride into its own commit.
+- E1.1 — DONE — `ae91409` — ccr/glm-5.3-flash — `pnpm test` 10/10, `pnpm typecheck` green, `git show --stat` 19 files/1057 insertions, stash empty, `git log --all -- gifs` empty — review n/a (plan marks T1 review-exempt) — 1 cycle — ~12m
+- NOTE: the worker's red run failed with Vitest 5's wording (`Cannot find module '../src/prng.js'`) rather than the plan's Vitest-4-era `Failed to resolve import`; same failure class, no config error. A future reader should not treat the wording difference as a deviation.
+### Closed 2026-10-08T14:26Z — STATUS: DONE at E1.1

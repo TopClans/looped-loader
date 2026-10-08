@@ -27,3 +27,9 @@ packages/core/LICENSE
 packages/vue/LICENSE
 packages/assets/LICENSE
 packages/assets/NOTICE
+
+# Writer worktrees and wave reports: both live inside the workspace but are never
+# part of the deliverable, and a worktree must not show up as untracked in the
+# integration checkout.
+.worktrees/
+.waves/

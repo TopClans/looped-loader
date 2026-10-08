@@ -170,7 +170,7 @@ Inputs and conditions the spec implies but no task's happy path exercises, most 
 
 A ruling that shapes every import in this repository: relative imports inside `src/` carry a `.js` extension (`from './prng.js'`), because `tsc` emits ESM that Node resolves at runtime and `moduleResolution: "bundler"` would let a bare `'./prng'` type-check while failing after build.
 
-- [ ] **Step 1: Create the workspace files**
+- [x] **Step 1: Create the workspace files**
 
 `package.json` (root):
 
@@ -354,7 +354,7 @@ jobs:
       - run: pnpm test
 ```
 
-- [ ] **Step 2: Create the core package's build configuration**
+- [x] **Step 2: Create the core package's build configuration**
 
 `packages/core/package.json`:
 
@@ -407,7 +407,7 @@ export default defineConfig({
 })
 ```
 
-- [ ] **Step 3: Write the failing tests**
+- [x] **Step 3: Write the failing tests**
 
 `packages/core/test/prng.test.ts`:
 
@@ -502,13 +502,13 @@ describe('pickClip', () => {
 })
 ```
 
-- [ ] **Step 4: Run the tests and confirm they fail**
+- [x] **Step 4: Run the tests and confirm they fail**
 
 Run: `pnpm install` then `pnpm --filter @topclans/looped-loader-core test`
 
 Expected: FAIL — `Failed to resolve import "../src/prng.js"` for both files. A failure of a different kind (a config error) is a signal that Step 2 is wrong, not that Step 3 is right.
 
-- [ ] **Step 5: Implement the error type, the PRNG and the picker**
+- [x] **Step 5: Implement the error type, the PRNG and the picker**
 
 `packages/core/src/errors.ts`:
 
@@ -671,7 +671,7 @@ export {
 } from './pool.js'
 ```
 
-- [ ] **Step 6: Run the tests and confirm they pass**
+- [x] **Step 6: Run the tests and confirm they pass**
 
 Run: `pnpm --filter @topclans/looped-loader-core test`
 
@@ -679,7 +679,7 @@ Expected: PASS, 10 tests across 2 files. Record this count — it is the baselin
 
 Run: `pnpm typecheck` — expect PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json .gitignore LICENSE NOTICE scripts .github packages/core

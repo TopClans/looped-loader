@@ -3,20 +3,21 @@
 The only place where story status lives. Update it at the close of every story, with
 evidence. Check it at the start of every session.
 
-**Current focus:** nothing started — first story is **E1.1**.
+**Current focus:** wave 2 — **E1.2** (`.worktrees/core`) and **E2.1** (`.worktrees/tools`) in parallel. E1.1 is done.
 **Baseline commit:** `a13b923` (spec, build plan and epic docs committed; no code yet).
+**Test baseline:** 10 tests across 2 files, established at the close of E1.1 (`ae91409`).
 
 ## Status
 
 | Id | Story | Status | Evidence | Notes |
 |---|---|---|---|---|
-| E1.1 | Workspace, licences, CI, picker | todo | — | creates `pnpm-lock.yaml`; must commit it |
-| E1.2 | Manifest validation, URL resolution | todo | — | — |
+| E1.1 | Workspace, licences, CI, picker | done | commit `ae91409`; `pnpm test` 10/10, `pnpm typecheck` green; `pnpm-lock.yaml` committed | 19 files, 1057 insertions; report `.waves/reports/E1.1.md` |
+| E1.2 | Manifest validation, URL resolution | in-progress | — | — |
 | E1.3 | Loader state machine, video lifecycle | todo | — | review-worthy |
 | E1.4 | Vue adapter, composables, theming | todo | — | — |
 | E1.5 | Vue behaviour tests | todo | — | reduced-motion flip, autoplay rejection, SSR |
 | E1.6 | Demo playground | todo | — | needs E2.3 for real clips |
-| E2.1 | Transcode ladder, ffmpeg layer | todo | — | independent of E1 after E1.1 |
+| E2.1 | Transcode ladder, ffmpeg layer | in-progress | — | independent of E1 after E1.1 |
 | E2.2 | QC gate, manifest, CLI | todo | — | review-worthy |
 | E2.3 | Corpus transcode, assets package | todo | — | **runs in the main checkout** (`gifs/` is untracked) |
 | E2.4 | Per-clip provenance in the manifest | todo | — | review-worthy; blocks E4.3 |
@@ -59,6 +60,8 @@ are not repeated here.
 | D-13 | Lockstep versioning across the three published packages for v1 | changesets is machinery without a second maintainer yet | 2026-10-08 |
 | D-14 | Story files exist only where requirements are new | the spec and plans already carry the build requirements; a story file restating a plan task drifts within two edits | 2026-10-08 |
 | D-15 | Local npm upgraded 10.9.4 → **11.21.0**; `npm@latest` is 12.2.0 and refuses to install on this machine | npm 12 requires node `^22.22.2 \|\| ^24.15.0 \|\| >=26.0.0` and the local node is exactly 22.22.0. npm 11.21.0 is above the 11.5.1 trusted-publishing floor and ships **`npm trust`**, so trusted publishers can be configured from the CLI (`npm trust github --file release.yml --repo TopClans/looped-loader --allow-publish`, then `npm trust list` to verify) instead of through the npmjs.com UI | 2026-10-08 |
+| D-16 | `.worktrees/` and `.waves/` are gitignored; a wave report lives at `.waves/reports/<story>.md`, outside every worktree and never committed | the report is completion evidence the Lead reads, not a deliverable; inside a worktree it would ride into that writer's own commit, and an untracked `.worktrees/` in the integration checkout makes `git status` unreadable | 2026-10-08 |
+| D-17 | Wave 1 ran Task 1 in the main checkout on `feat/looped-loader`, as the plan's `Start` section directs, and it is the only task besides Task 6 with no worktree | Task 1 creates the workspace every later worktree branches from, so there is nothing to branch from until it lands; the runbook's isolation rule starts at Task 2 | 2026-10-08 |
 
 ## Technical debt and open items
 
@@ -101,3 +104,4 @@ what actually happened, as opposed to what was planned.
 | Date | Session | Result |
 |---|---|---|
 | 2026-10-08 | brainstorm → spec → build plan → epic, runbook, tracker | repo created (private), spec and plan committed; 10 plan defects found and fixed in review; no code yet |
+| 2026-10-08 | wave 1 — E1.1 | subagent run started; workers `glm-5.3-flash`, reviewers `MiniMax-M3`; E1.1 `done` at `ae91409` (10 tests green, lockfile committed), wave 2 dispatched |
