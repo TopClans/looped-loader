@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, shallowRef } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, shallowRef, watch } from 'vue'
 import {
   createLoopedLoader,
   type Clip,
@@ -54,14 +54,25 @@ const reducedMotion = ref(props.respectReducedMotion && (query?.matches ?? false
 
 let loader: LoopedLoaderHandle | null = null
 
-const showVideo = computed(() => !reducedMotion.value && state.value !== 'error')
+/** False until onMounted: the server render and the client's first render agree (spinner only). */
+const mounted = ref(false)
+
+const showVideo = computed(() => mounted.value && !reducedMotion.value && state.value !== 'error')
 const aspect = computed(() => (clip.value ? `${clip.value.width} / ${clip.value.height}` : '16 / 9'))
 
 function onMotionChange(event: MediaQueryListEvent): void {
   reducedMotion.value = props.respectReducedMotion && event.matches
 }
 
+// The <video> is created only after mount, so the template ref is the single
+// attach point: it fires when the element first appears and again if it is
+// recreated (e.g. reduced motion switched back off). attach() is idempotent.
+watch(videoEl, (element) => {
+  if (element && loader) loader.attach(element)
+})
+
 onMounted(() => {
+  mounted.value = true
   loader = createLoopedLoader({
     baseUrl: props.baseUrl,
     ...(props.manifest !== undefined ? { manifest: props.manifest } : {}),
@@ -82,7 +93,6 @@ onMounted(() => {
     onError: (failure) => emit('error', failure),
   })
 
-  if (videoEl.value) loader.attach(videoEl.value)
   if (root.value) loader.observeRoot(root.value)
   loader.start()
   query?.addEventListener('change', onMotionChange)
