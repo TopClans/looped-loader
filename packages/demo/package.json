@@ -1,0 +1,23 @@
+{
+  "name": "@topclans/looped-loader-demo",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/sync-clips.mjs && vite",
+    "build": "node scripts/sync-clips.mjs && vite build",
+    "typecheck": "vue-tsc -p tsconfig.json --noEmit",
+    "test": "node -e \"console.log('the demo is verified in a browser, see Task 10')\""
+  },
+  "dependencies": {
+    "@topclans/looped-loader-assets": "workspace:*",
+    "@topclans/looped-loader-vue": "workspace:*",
+    "vue": "^3.5.43"
+  },
+  "devDependencies": {
+    "@types/node": "^22",
+    "@vitejs/plugin-vue": "^6.0.9",
+    "vite": "^8.3.3",
+    "vue-tsc": "^3.3.12"
+  }
+}
