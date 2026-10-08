@@ -31,7 +31,10 @@ Copied verbatim from the spec. Every task's requirements include this section.
 - Error codes, exactly these six: `manifest-fetch`, `manifest-invalid`, `clip-fetch`, `decode`, `autoplay-blocked`, `no-clips`.
 - `gifs/` is never committed; `git log --all -- gifs/` must stay empty.
 - Text files are LF, media files binary (`.gitattributes` already committed).
+- `pnpm-lock.yaml` is committed at the repository root. CI installs with `--frozen-lockfile`, so an uncommitted lockfile fails acceptance criterion 1 at the first push.
+- Every published package carries its own `LICENSE` (and the assets package its own `NOTICE`) **inside its tarball**, produced by `scripts/sync-legal.mjs` during `pnpm build`. An npm tarball is read in isolation: a licence file left at the repository root never reaches a consumer, and the licensing boundary is the one thing this project cannot afford to ship wrong.
 - No secret ever appears in a command argument, in the repository, or in the transcript. The npm token is used only through `sec run`.
+- Bundle budget, enforced by `scripts/check-size.mjs` on every build: `@topclans/looped-loader-core` ≤ 8 KB gzip, `@topclans/looped-loader-vue` ≤ 12 KB gzip (JS and CSS together). A loader is on the critical path of every page that uses it, so a dependency creeping into either package is a regression rather than a detail.
 
 ## Handoff
 
@@ -52,6 +55,8 @@ pnpm test                   # baseline: green, 0 tests before Task 1, then Task 
 
 Baseline honesty: on the base commit `3f167fd` there is no workspace at all, so `pnpm test` cannot run. The first green baseline is established at the end of Task 1; record its test count there and keep it as the reference.
 
+Permission mode matters for exactly one task. Tasks 1–11 write only inside the workspace and run fine under `workspace-write`. **Task 12 does not:** `npm login` writes `~/.npmrc` and `npm publish` writes the npm cache, both outside the workspace, so a `workspace-write` session is denied there. Either run the executor session with `DSH_PERMISSION_MODE=danger-full-access`, or let the owner run `npm login` and the three publish commands themselves in a normal terminal. Discovering this at the publish step is the expensive way to learn it.
+
 Writer worktrees (one writer per worktree, never two):
 
 ```powershell
@@ -70,6 +75,17 @@ git worktree add .worktrees/review-1 --detach <sha-to-review>
 ```
 
 If serena has the project activated, stop it before `git worktree remove` — it holds directories open and the removal half-fails (see `~/.dsh/AGENTS.md`).
+
+**Integration.** Writers branch from `feat/looped-loader`; the Lead merges a writer's branch only after its reviewer gate passes, and only then starts a task that depends on it:
+
+```powershell
+git switch feat/looped-loader
+git merge --no-ff feat/core -m "merge: core (tasks 2-3)"
+pnpm -r build
+pnpm -r test          # on the integration branch, never inside the writer's worktree
+```
+
+`git rebase` and `git pull --rebase` are forbidden in this repository. Task 6 runs in the main checkout, which is `feat/looped-loader`, because `gifs/` is untracked and does not exist inside any worktree. Remove a writer's worktree after its merge.
 
 ### Decisions and rulings
 
@@ -142,7 +158,8 @@ Inputs and conditions the spec implies but no task's happy path exercises, most 
 ## Task 1: Workspace skeleton, licences, CI, and the deterministic picker
 
 **Files:**
-- Create: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `LICENSE`, `NOTICE`, `.github/workflows/ci.yml`
+- Create: `package.json`, `pnpm-workspace.yaml`, `tsconfig.base.json`, `LICENSE`, `NOTICE`, `scripts/sync-legal.mjs`, `scripts/check-size.mjs`, `.github/workflows/ci.yml`
+- Modify: `.gitignore` (the generated licence copies)
 - Create: `packages/core/package.json`, `packages/core/tsconfig.json`, `packages/core/vitest.config.ts`
 - Create: `packages/core/src/errors.ts`, `packages/core/src/prng.ts`, `packages/core/src/pool.ts`, `packages/core/src/index.ts`
 - Test: `packages/core/test/prng.test.ts`, `packages/core/test/pool.test.ts`
@@ -165,12 +182,87 @@ A ruling that shapes every import in this repository: relative imports inside `s
   "packageManager": "pnpm@10.15.1",
   "engines": { "node": ">=20.11" },
   "scripts": {
-    "build": "pnpm -r build",
+    "build": "node scripts/sync-legal.mjs && pnpm -r build && node scripts/check-size.mjs",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
     "transcode": "pnpm --filter @topclans/looped-loader-tools transcode"
   },
   "devDependencies": { "typescript": "~5.9.3" }
+}
+```
+
+`scripts/sync-legal.mjs` — npm reads a tarball in isolation, so each published package needs the licence text inside its own directory:
+
+```js
+import { copyFileSync, existsSync } from 'node:fs'
+import { dirname, join, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const copies = [
+  ['LICENSE', 'packages/core/LICENSE'],
+  ['LICENSE', 'packages/vue/LICENSE'],
+  ['LICENSE', 'packages/assets/LICENSE'],
+  ['NOTICE', 'packages/assets/NOTICE'],
+]
+
+for (const [from, to] of copies) {
+  const target = join(root, to)
+  const packageDir = dirname(target)
+  if (!existsSync(packageDir)) {
+    // Tasks 1-5 run before the assets package exists; skipping is correct, failing is not.
+    console.log(`skipped ${to}: ${packageDir} does not exist yet`)
+    continue
+  }
+  const source = join(root, from)
+  if (!existsSync(source)) throw new Error(`missing ${from} at the repository root`)
+  copyFileSync(source, target)
+}
+console.log('licence files synced')
+```
+
+Append to `.gitignore`:
+
+```
+# generated by scripts/sync-legal.mjs
+packages/core/LICENSE
+packages/vue/LICENSE
+packages/assets/LICENSE
+packages/assets/NOTICE
+```
+
+`scripts/check-size.mjs` — the bundle budget from Global Constraints, with no dependency of its own:
+
+```js
+import { readdirSync, readFileSync } from 'node:fs'
+import { join, resolve } from 'node:path'
+import { gzipSync } from 'node:zlib'
+
+const budgets = [
+  { dir: 'packages/core/dist', max: 8 * 1024 },
+  { dir: 'packages/vue/dist', max: 12 * 1024 },
+]
+
+let failed = false
+for (const { dir, max } of budgets) {
+  const root = resolve(dir)
+  let files
+  try {
+    files = readdirSync(root).filter((name) => /\.(js|css)$/.test(name))
+  } catch {
+    // Tasks 1-6 build one package at a time; an unbuilt package is not a failure.
+    console.log(`skipped ${dir}: not built yet`)
+    continue
+  }
+  const bytes = files.reduce((total, name) => total + gzipSync(readFileSync(join(root, name))).length, 0)
+  const over = bytes > max
+  console.log(`${dir}: ${(bytes / 1024).toFixed(1)} KB gzip, budget ${(max / 1024).toFixed(0)} KB — ${over ? 'OVER' : 'ok'}`)
+  if (over) failed = true
+}
+
+if (failed) {
+  console.error('bundle budget exceeded: something crept into a package that must stay tiny')
+  process.exit(1)
 }
 ```
 
@@ -274,7 +366,7 @@ jobs:
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
-  "files": ["dist"],
+  "files": ["dist", "LICENSE"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -590,9 +682,11 @@ Run: `pnpm typecheck` — expect PASS.
 - [ ] **Step 7: Commit**
 
 ```bash
-git add package.json pnpm-workspace.yaml tsconfig.base.json LICENSE NOTICE .github packages/core
+git add package.json pnpm-workspace.yaml pnpm-lock.yaml tsconfig.base.json .gitignore LICENSE NOTICE scripts .github packages/core
 git commit -m "feat(core): workspace skeleton, licences and the deterministic clip picker"
 ```
+
+`pnpm-lock.yaml` is part of this commit on purpose: CI installs with `--frozen-lockfile`, and a lockfile that never got committed turns the first push red for a reason that looks nothing like its cause.
 
 ## Task 2: Manifest validation, path resolution and pool construction
 
@@ -1327,20 +1421,27 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
   function onAutoplayBlocked(cause: unknown): void {
     emitError(new LoopedLoaderError('autoplay-blocked', 'the browser refused to start playback', cause))
     if (typeof document === 'undefined') return
-    const retry = (): void => {
-      document.removeEventListener('pointerdown', retry)
-      requestPlay()
-    }
-    document.addEventListener('pointerdown', retry, { once: true })
+    // Re-registering with { once: true } keeps exactly one pending retry, and the
+    // handler is removed in destroy() so a destroyed loader cannot be resumed by a
+    // stray gesture later.
+    document.removeEventListener('pointerdown', retryOnInteraction)
+    document.addEventListener('pointerdown', retryOnInteraction, { once: true })
+  }
+
+  const retryOnInteraction = (): void => {
+    document.removeEventListener('pointerdown', retryOnInteraction)
+    requestPlay()
+  }
+
+  const onVisibilityChange = (): void => {
+    if (!video) return
+    if (document.hidden) video.pause()
+    else requestPlay()
   }
 
   function bindVisibility(): void {
     if (typeof document === 'undefined') return
-    document.addEventListener('visibilitychange', () => {
-      if (!video) return
-      if (document.hidden) video.pause()
-      else requestPlay()
-    })
+    document.addEventListener('visibilitychange', onVisibilityChange)
   }
 
   return {
@@ -1406,6 +1507,10 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
         video.load?.()
       }
       video = null
+      if (typeof document !== 'undefined') {
+        document.removeEventListener('visibilitychange', onVisibilityChange)
+        document.removeEventListener('pointerdown', retryOnInteraction)
+      }
     },
   }
 }
@@ -2268,6 +2373,7 @@ export async function main(argv: string[]): Promise<number> {
       return !before || before.sha256.mp4 !== clip.sha256.mp4 || before.bytes.mp4 !== clip.bytes.mp4
     })
     writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
+    rmSync(workDir, { recursive: true, force: true })
     if (differences.length > 0) {
       console.error(`--check failed: ${differences.length} clip(s) differ from the committed manifest`)
       return 1
@@ -2386,6 +2492,7 @@ git commit -m "feat(tools): QC gate, manifest assembly and the transcode CLI"
 
 **Files:**
 - Create: `packages/assets/package.json`, `packages/assets/README.md`, `packages/assets/scripts/verify.mjs`
+- Modify: `.gitignore` (the transcode scratch directory)
 - Generated: `packages/assets/clips/*.mp4` (32), `packages/assets/manifest.json`, `packages/assets/checksums.json`, `packages/assets/qc-report.json`, `packages/assets/qc-report.md`
 
 **Interfaces:**
@@ -2405,7 +2512,7 @@ This task runs **in the main checkout**, never in a worktree: `gifs/` is untrack
   "description": "Perfectly looped clips and manifest for looped-loader",
   "license": "SEE LICENSE IN NOTICE",
   "type": "module",
-  "files": ["clips", "manifest.json", "checksums.json", "NOTICE"],
+  "files": ["clips", "manifest.json", "checksums.json", "LICENSE", "NOTICE"],
   "exports": {
     "./manifest.json": "./manifest.json",
     "./clips/*": "./clips/*"
@@ -2419,8 +2526,14 @@ This task runs **in the main checkout**, never in a worktree: `gifs/` is untrack
 }
 ```
 
-`packages/assets/scripts/verify.mjs` — verifies the assets without needing ffmpeg, so CI can prove the committed media matches the manifest:
+Append to `.gitignore` — the CLI's scratch directory holds lossless reference encodes, and a `--check` run used to leave it behind:
 
+```
+# transcode scratch space
+packages/assets/.work/
+```
+
+`packages/assets/scripts/verify.mjs` — verifies the assets without needing ffmpeg, so CI can prove the committed media matches the manifest:
 ```js
 import { createHash } from 'node:crypto'
 import { readFileSync, statSync } from 'node:fs'
@@ -2548,7 +2661,7 @@ The core is attached to the `<video>` element imperatively and assigns `.src` it
   "license": "MIT",
   "type": "module",
   "sideEffects": false,
-  "files": ["dist"],
+  "files": ["dist", "LICENSE"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
@@ -3222,7 +3335,7 @@ git commit -m "test(vue): lock the failure modes the spec promises to survive"
 ## Task 9: The demo playground — contact sheet and scenario board
 
 **Files:**
-- Create: `packages/demo/package.json`, `packages/demo/vite.config.ts`, `packages/demo/index.html`, `packages/demo/scripts/sync-clips.mjs`
+- Create: `packages/demo/package.json`, `packages/demo/tsconfig.json`, `packages/demo/vite.config.ts`, `packages/demo/index.html`, `packages/demo/scripts/sync-clips.mjs`
 - Create: `packages/demo/src/main.ts`, `packages/demo/src/App.vue`, `packages/demo/src/ContactSheet.vue`, `packages/demo/src/ScenarioBoard.vue`
 - Modify: `.gitignore` (add the generated `packages/demo/public/clips/`)
 
@@ -3252,6 +3365,7 @@ git commit -m "test(vue): lock the failure modes the spec promises to survive"
     "vue": "^3.5.43"
   },
   "devDependencies": {
+    "@types/node": "^22",
     "@vitejs/plugin-vue": "^6.0.9",
     "vite": "^8.3.3",
     "vue-tsc": "^3.3.12"
@@ -3292,6 +3406,20 @@ export default defineConfig({
   plugins: [vue()],
   resolve: { alias: { '@': resolve(import.meta.dirname, 'src') } },
 })
+```
+
+`packages/demo/tsconfig.json` — the demo's `typecheck` script points at this file, and `resolveJsonModule` is what makes `import manifest from '@topclans/looped-loader-assets/manifest.json'` type-check at all:
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "types": ["node"],
+    "noEmit": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src", "vite.config.ts"]
+}
 ```
 
 `packages/demo/index.html`:
@@ -3540,17 +3668,35 @@ Then collect the console messages and the network log: **zero** console errors a
 
 Take the screenshot to `docs/verification/2026-10-08-browser/contact-sheet.png`.
 
-- [ ] **Step 4: Verify reduced motion**
+- [ ] **Step 4: Measure what the clip costs the main thread**
+
+A loader exists to make a slow start feel better; a video that blocks the main thread during hydration would do the opposite, and nothing in the spec measured it. On a cold reload of the contact sheet, collect long tasks while the clips start:
+
+```js
+() => new Promise((resolve) => {
+  const entries = []
+  const observer = new PerformanceObserver((list) => entries.push(...list.getEntries().map((e) => Math.round(e.duration))))
+  observer.observe({ type: 'longtask', buffered: true })
+  setTimeout(() => {
+    observer.disconnect()
+    resolve({ count: entries.length, longest: Math.max(0, ...entries) })
+  }, 4000)
+})
+```
+
+Expected: `longest` stays under 200 ms. A larger number is a finding to report with the measurement attached — it would argue for starting playback after first paint instead of with it. Do not add a `requestIdleCallback` and call it fixed; that changes the product, so it goes to the owner first.
+
+- [ ] **Step 5: Verify reduced motion**
 
 Emulate `prefers-reduced-motion: reduce` with the Playwright emulation tool this server exposes (it is usually `browser_emulate_media` with `reducedMotion: "reduce"`). If no such tool exists in the mounted set, say so and mark acceptance criterion 6 **not verified** — do not stub `window.matchMedia` from `browser_evaluate` and call it verification, because that tests the stub rather than the stylesheet and the media query.
 
 With emulation on, reload and re-run the evaluation from Step 3. Expected: `total: 0`, and the network log contains **no** request for any `clips/*.mp4`. Take `scenarios.png` from the scenario board with the reduced-motion card visible.
 
-- [ ] **Step 5: Write the evidence file**
+- [ ] **Step 6: Write the evidence file**
 
 `docs/verification/2026-10-08-browser/README.md` records, in the past tense and with numbers: the exact URL verified, the date, the evaluation JSON, console-error count, failed-request count, which mechanism was used for the reduced-motion emulation, and every deviation found. A deviation is reported here, not fixed silently.
 
-- [ ] **Step 6: Turn the browser tools off and stop the server**
+- [ ] **Step 7: Turn the browser tools off and stop the server**
 
 ```powershell
 pwsh C:/dev/dsh/scripts/mcp-playwright.ps1 -Action off
@@ -3558,7 +3704,7 @@ pwsh C:/dev/dsh/scripts/mcp-playwright.ps1 -Action off
 
 Kill the background dev-server job. Leaving Playwright mounted costs every later session 25 tool schemas.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 8: Commit**
 
 ```bash
 git add docs/verification
@@ -3638,7 +3784,7 @@ pnpm --filter @topclans/looped-loader-vue exec npm pack --dry-run --json
 pnpm --filter @topclans/looped-loader-assets exec npm pack --dry-run --json
 ```
 
-Expected for each: `core` and `vue` ship `dist` only — no `src`, no `test`, no `.probe`; `assets` ships `clips`, `manifest.json`, `checksums.json` and `NOTICE`, and **no** `gifs`. A tarball containing anything unexpected stops the release until it is explained.
+Expected for each: `core` and `vue` ship `dist` plus `LICENSE` — no `src`, no `test`, no `.probe`; `assets` ships `clips`, `manifest.json`, `checksums.json`, `LICENSE` and `NOTICE`, and **no** `gifs`. A tarball containing anything unexpected stops the release until it is explained, and a tarball *missing* `LICENSE` means `sync-legal.mjs` did not run — which is why `pnpm -r build` is the first command in this step.
 
 - [ ] **Step 3: Write the changelog and freeze the version**
 
@@ -3685,10 +3831,12 @@ gh repo edit TopClans/looped-loader --visibility public --accept-visibility-chan
 - [ ] **Step 7: Commit**
 
 ```bash
-git add CHANGELOG.md README.md packages/*/package.json
+git add CHANGELOG.md README.md packages/*/package.json pnpm-lock.yaml
 git commit -m "chore(release): 0.1.0"
 git push origin main
 ```
+
+`pnpm-lock.yaml` is staged here too: a version bump or a dependency edit that changes the lockfile and is not committed leaves CI red on a clean clone.
 
 ## Acceptance criteria map
 
@@ -3701,10 +3849,11 @@ Every criterion from the spec, and the task whose evidence settles it.
 | 3. A second `--check` reports zero differences | Task 6, Step 4 |
 | 4. `git log --all -- gifs/` empty | Task 6, Step 6 and Task 12, Step 6 |
 | 5. Demo in a real browser: 32/32 playing, 0 console errors, 0 failed requests, screenshot attached | Task 10, Step 3 |
-| 6. Reduced motion verified in a real browser | Task 10, Step 4 |
+| 6. Reduced motion verified in a real browser | Task 10, Step 5 |
 | 7. Self-hosted recipe verified; CDN recipe verified after publish | Task 11, Step 3 and Task 12, Step 5 |
 | 8. `npm publish --dry-run` inspected for all three packages | Task 12, Step 2 |
-| 9. Owner reviewed the contact sheet before going public | Task 10, Step 5 and Task 12, Step 1 |
+| 9. Owner reviewed the contact sheet before going public | Task 10, Step 6 and Task 12, Step 1 |
+| *(plan addition, not in the spec)* main-thread cost of playback measured and under 200 ms | Task 10, Step 4 |
 
 ## Definition of done for a task
 
