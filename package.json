@@ -8,7 +8,7 @@
     "build": "node scripts/sync-legal.mjs && pnpm -r build && node scripts/check-size.mjs",
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck",
-    "transcode": "pnpm --filter @topclans/looped-loader-tools transcode"
+    "transcode": "pnpm --filter @topclans/looped-loader-tools build && node tools/transcode/dist/index.js"
   },
   "devDependencies": { "typescript": "~5.9.3" }
 }
