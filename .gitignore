@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+.vite/
+coverage/
+
+# Raw source clips: inputs to tools/transcode, deliberately not versioned.
+# Their transcoded derivatives live in packages/assets and are the deliverable.
+gifs/
+
+# Throwaway measurement scripts from the design session
+.probe/
+
+# OS noise
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Local env
+*.local
