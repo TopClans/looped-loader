@@ -8,10 +8,10 @@ const kb = (bytes: number | undefined) => `${Math.round((bytes ?? 0) / 1024)} KB
 
 <template>
   <section>
-    <p>{{ clips.length }} clips · {{ kb(manifest.corpus.totalBytes) }} total · base-url <code>/clips</code></p>
+    <p>{{ clips.length }} clips · {{ kb(manifest.corpus.totalBytes) }} total · base-url <code>/looped-clips</code></p>
     <ul class="grid">
       <li v-for="clip in clips" :key="clip.id">
-        <LoopedLoader base-url="/clips" :clip="clip.id" size="lg" label="Loading" />
+        <LoopedLoader base-url="/looped-clips" :clip="clip.id" size="lg" label="Loading" />
         <dl>
           <dt>{{ clip.id }}</dt>
           <dd>{{ clip.width }}×{{ clip.height }} · {{ kb(clip.bytes?.mp4) }} · CRF {{ clip.encode?.crf }}</dd>
