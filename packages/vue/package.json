@@ -4,12 +4,13 @@
   "description": "Vue 3 adapter for looped-loader: a looping clip instead of a spinner",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": ["**/*.css"],
   "files": ["dist", "LICENSE"],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    "./style.css": "./dist/index.css"
   },
   "scripts": {
     "build": "vite build && vue-tsc -p tsconfig.build.json",

@@ -1,4 +1,6 @@
 import { flushPromises, mount } from '@vue/test-utils'
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { nextTick } from 'vue'
 import LoopedLoader from '../src/LoopedLoader.vue'
@@ -72,6 +74,19 @@ describe('LoopedLoader', () => {
     await video.trigger('playing')
     await nextTick()
     expect(wrapper.find('.ll-spinner').exists()).toBe(false)
+    wrapper.unmount()
+  })
+
+  it('carries the ll-playing class only after playback has started', async () => {
+    const wrapper = mount(LoopedLoader, {
+      props: { baseUrl: '/clips', manifest, seed: 'x', delayMs: 0 },
+    })
+    await flushPromises()
+    const root = wrapper.find('.ll-root')
+    expect(root.classes()).not.toContain('ll-playing')
+    await wrapper.find('video').trigger('playing')
+    await nextTick()
+    expect(root.classes()).toContain('ll-playing')
     wrapper.unmount()
   })
 
@@ -149,5 +164,25 @@ describe('LoopedLoader', () => {
     await flushPromises()
     wrapper.unmount()
     expect(pause).toHaveBeenCalled()
+  })
+
+  it('drops the ll-rounded class when rounded is false', () => {
+    const wrapper = mount(LoopedLoader, { props: { baseUrl: '/clips', manifest, rounded: false } })
+    expect(wrapper.find('.ll-root').classes()).not.toContain('ll-rounded')
+    wrapper.unmount()
+    const rounded = mount(LoopedLoader, { props: { baseUrl: '/clips', manifest } })
+    expect(rounded.find('.ll-root').classes()).toContain('ll-rounded')
+    rounded.unmount()
+  })
+
+  it('rules the video corner radius by the ll-rounded class, not unconditionally', () => {
+    // Vitest does not inject SFC styles (css: false), so the scoped stylesheet
+    // itself is pinned at its source: with the class absent the video must have
+    // no border-radius at all, which is only true when no unconditional rule sets one.
+    const source = readFileSync(resolve(import.meta.dirname, '../src/LoopedLoader.vue'), 'utf8')
+    const style = /<style scoped>([\s\S]*?)<\/style>/.exec(source)?.[1] ?? ''
+    const plainVideo = /(^|})\s*\.ll-video\s*{([^}]*)}/.exec(style)?.[2] ?? ''
+    expect(plainVideo).not.toContain('border-radius')
+    expect(style).toMatch(/\.ll-rounded\s+\.ll-video\s*{[^}]*border-radius:/)
   })
 })
