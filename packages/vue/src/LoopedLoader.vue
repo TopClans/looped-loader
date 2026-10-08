@@ -109,7 +109,11 @@ onBeforeUnmount(() => {
   <div
     ref="root"
     class="ll-root"
-    :class="[`ll-size-${size}`, `ll-mode-${mode}`, { 'll-rounded': rounded }]"
+    :class="[
+      `ll-size-${size}`,
+      `ll-mode-${mode}`,
+      { 'll-rounded': rounded, 'll-playing': state === 'playing' },
+    ]"
     :data-state="state"
     role="status"
     aria-live="polite"
@@ -155,6 +159,13 @@ onBeforeUnmount(() => {
   width: var(--ll-size, 96px);
   max-width: 100%;
   height: auto;
+  /* Spec §4.6: invisible until playing — the spinner is what the user sees —
+     then a fade in over --ll-fade-ms once the root carries .ll-playing. */
+  opacity: 0;
+  transition: opacity var(--ll-fade-ms, 150ms);
+}
+.ll-playing .ll-video {
+  opacity: 1;
 }
 .ll-rounded .ll-video {
   border-radius: var(--ll-radius, 12px);
@@ -181,5 +192,6 @@ onBeforeUnmount(() => {
 }
 @media (prefers-reduced-motion: reduce) {
   .ll-spinner { animation: none; }
+  .ll-video { transition: none; }
 }
 </style>

@@ -77,6 +77,19 @@ describe('LoopedLoader', () => {
     wrapper.unmount()
   })
 
+  it('carries the ll-playing class only after playback has started', async () => {
+    const wrapper = mount(LoopedLoader, {
+      props: { baseUrl: '/clips', manifest, seed: 'x', delayMs: 0 },
+    })
+    await flushPromises()
+    const root = wrapper.find('.ll-root')
+    expect(root.classes()).not.toContain('ll-playing')
+    await wrapper.find('video').trigger('playing')
+    await nextTick()
+    expect(root.classes()).toContain('ll-playing')
+    wrapper.unmount()
+  })
+
   it('is a polite live region with an accessible label', () => {
     const wrapper = mount(LoopedLoader, { props: { baseUrl: '/clips', manifest, label: 'Загрузка' } })
     const root = wrapper.find('.ll-root')

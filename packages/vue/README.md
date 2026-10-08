@@ -15,12 +15,19 @@ pnpm add @topclans/looped-loader-vue @topclans/looped-loader-assets
 ```vue
 <script setup>
 import { LoopedLoader } from '@topclans/looped-loader-vue'
+// In 0.1.0 the stylesheet is a separate import, not inlined in the JS.
+import '@topclans/looped-loader-vue/style.css'
 </script>
 
 <template>
   <LoopedLoader base-url="/looped-clips" />
 </template>
 ```
+
+In `0.1.0` the stylesheet ships as a separate import through the package's
+`exports` map — the `import '@topclans/looped-loader-vue/style.css'` line
+above. Without it the loader still plays clips, but renders unstyled: no
+spinner, no sizing, no fade.
 
 `base-url` points at the directory that serves the asset package's
 `manifest.json` and `clips/`. The full story — both hosting recipes with the

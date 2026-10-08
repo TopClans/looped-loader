@@ -45,6 +45,8 @@ Then:
 ```vue
 <script setup>
 import { LoopedLoader } from '@topclans/looped-loader-vue'
+// In 0.1.0 the stylesheet is a separate import, not inlined in the JS.
+import '@topclans/looped-loader-vue/style.css'
 </script>
 
 <template>
@@ -54,21 +56,27 @@ import { LoopedLoader } from '@topclans/looped-loader-vue'
 
 With no further configuration the loader waits 120 ms for the surrounding
 content, picks a clip deterministically for the current URL, and swaps the
-spinner for the playing video. On a page that loads faster than `delayMs`, the
-clip is never fetched at all.
+spinner for the playing video, fading it in over 150 ms. On a page that loads
+faster than `delayMs`, the clip is never fetched at all.
 
-**Styling in 0.1.0.** The component's scoped stylesheet is built to
-`dist/index.css` inside the package, but this release does not yet expose it
-through the package's `exports` map, so there is nothing to import. Until that
-ships, add the ~1 KB of `.ll-*` rules from
-`node_modules/@topclans/looped-loader-vue/dist/index.css` to your own CSS —
-without them the video plays but the spinner, the sizing and the visually
-hidden label are missing.
+**Styling in 0.1.0.** The component's scoped stylesheet ships as
+`dist/index.css` inside the package and is loaded through a **separate
+import** — `import '@topclans/looped-loader-vue/style.css'` (exposed by the
+package's `exports` map). It is not inlined into the JS bundle; without the
+import the video plays but the spinner, the sizing and the visually hidden
+label are missing.
 
 ### CDN
 
 ```vue
-<LoopedLoader base-url="https://cdn.jsdelivr.net/npm/@topclans/looped-loader-assets@0.1.0" />
+<script setup>
+// Same separate stylesheet import as the self-hosted recipe.
+import '@topclans/looped-loader-vue/style.css'
+</script>
+
+<template>
+  <LoopedLoader base-url="https://cdn.jsdelivr.net/npm/@topclans/looped-loader-assets@0.1.0" />
+</template>
 ```
 
 The `base-url` is the package root on the CDN: the manifest sits at its top
@@ -133,6 +141,7 @@ component (they cascade onto the root element):
 | `--ll-spinner-width` | `3px` | Spinner stroke width |
 | `--ll-spinner-color` | `currentColor` | Spinner accent (the rotating arc) |
 | `--ll-spinner-track` | `rgb(127 127 127 / 0.25)` | Spinner track ring |
+| `--ll-fade-ms` | `150ms` | How long the video takes to fade in once playback starts (disabled under reduced motion) |
 
 ```vue
 <LoopedLoader
