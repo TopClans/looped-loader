@@ -73,6 +73,35 @@ describe('checkClip', () => {
     expect(checkClip({ ...base, seamOutput: { ...base.seamOutput, seam: 19.7 } })).toEqual([])
   })
 
+  it('records a below-floor seam regression as review instead of an error', () => {
+    const findings = checkClip({
+      ...base,
+      seamInput: { stepMean: 12, stepP90: 20, seam: 1.0 },
+      seamOutput: { stepMean: 12, stepP90: 20, seam: 1.5 },
+    })
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'seam-regression-noise', level: 'review' }))
+    expect(findings.some((finding) => finding.level === 'error')).toBe(false)
+  })
+
+  it('fails a seam regression at the noise floor', () => {
+    const findings = checkClip({
+      ...base,
+      seamInput: { stepMean: 12, stepP90: 20, seam: 2.0 },
+      seamOutput: { stepMean: 12, stepP90: 20, seam: 2.5 },
+    })
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'seam-regression', level: 'error' }))
+  })
+
+  it('keeps a seam regression just below the noise floor at review', () => {
+    const findings = checkClip({
+      ...base,
+      seamInput: { stepMean: 12, stepP90: 20, seam: 1.99 },
+      seamOutput: { stepMean: 12, stepP90: 20, seam: 2.4 },
+    })
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'seam-regression-noise', level: 'review' }))
+    expect(findings.some((finding) => finding.level === 'error')).toBe(false)
+  })
+
   it('flags a visible loop jump for human review without failing the build', () => {
     const findings = checkClip({
       ...base,
