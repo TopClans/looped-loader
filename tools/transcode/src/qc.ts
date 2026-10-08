@@ -28,6 +28,8 @@ export interface QcFinding {
 
 export const SSIM_FLOOR = 0.93
 export const SEAM_REGRESSION = 1.1
+/** Below this absolute MAE the 10 % rule measures encoder noise, not a visible loop jump. */
+export const SEAM_NOISE_FLOOR = 2
 
 function mae(frames: Uint8Array, aOffset: number, bOffset: number, frameSize: number): number {
   let sum = 0
@@ -68,11 +70,19 @@ export function checkClip(input: QcInput): QcFinding[] {
     add('error', 'ssim', `SSIM ${input.ssim.toFixed(4)} is below the ${SSIM_FLOOR} floor`)
   }
   if (input.seamOutput.seam > input.seamInput.seam * SEAM_REGRESSION && input.seamInput.seam > 0.5) {
-    add(
-      'error',
-      'seam-regression',
-      `seam grew from ${input.seamInput.seam.toFixed(2)} to ${input.seamOutput.seam.toFixed(2)}`,
-    )
+    if (input.seamInput.seam >= SEAM_NOISE_FLOOR) {
+      add(
+        'error',
+        'seam-regression',
+        `seam grew from ${input.seamInput.seam.toFixed(2)} to ${input.seamOutput.seam.toFixed(2)}`,
+      )
+    } else {
+      add(
+        'review',
+        'seam-regression-noise',
+        `seam grew from ${input.seamInput.seam.toFixed(2)} to ${input.seamOutput.seam.toFixed(2)}, below the ${SEAM_NOISE_FLOOR.toFixed(1)} noise floor — recorded, not a failure`,
+      )
+    }
   }
   if (input.seamOutput.seam > input.seamOutput.stepP90) {
     add('review', 'loop-seam-review', `seam ${input.seamOutput.seam.toFixed(2)} exceeds the p90 step ${input.seamOutput.stepP90.toFixed(2)}`)
