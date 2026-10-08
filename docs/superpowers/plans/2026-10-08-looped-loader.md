@@ -1068,7 +1068,7 @@ describe('createLoopedLoader', () => {
     loader.start()
     await flush()
     loader.attach(video)
-    expect(video.src).toBe('/clips/clips/a.mp4' )
+    expect(video.src).toBe('/clips/clips/d.mp4')
     expect(loader.state).toBe('loading')
     video.emit('playing')
     expect(loader.state).toBe('playing')
@@ -1085,7 +1085,7 @@ describe('createLoopedLoader', () => {
     await flush()
     await flush()
     expect(loader.state).toBe('loading')
-    expect(loader.src).toBe('/clips/clips/a.mp4')
+    expect(loader.src).toBe('/clips/clips/c.mp4')
     loader.destroy()
   })
 
@@ -1344,7 +1344,11 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
       setState('resolving')
       const manifest = await loadManifest()
       if (destroyed) return
-      pool = buildPool(manifest, { clip: options.clip, clips: options.clips })
+      // exactOptionalPropertyTypes: an explicit `undefined` is not the same as an absent key.
+      const poolOptions: { clip?: string; clips?: string[] } = {}
+      if (options.clip !== undefined) poolOptions.clip = options.clip
+      if (options.clips !== undefined) poolOptions.clips = options.clips
+      pool = buildPool(manifest, poolOptions)
       selectNext()
     } catch (cause) {
       if (destroyed) return
@@ -1526,7 +1530,7 @@ export { createLoopedLoader, prefersReducedMotion, type LoopedLoader, type Loope
 
 Run: `pnpm --filter @topclans/looped-loader-core test`
 
-Expected: PASS. The seeded test above expects `/clips/clips/a.mp4` for seed `'route:/orders'` — if your implementation lands on a different index, do **not** change the PRNG to force it: read the actual index out of the failure, confirm it is stable across runs, and update the expectation, because the requirement is determinism, not a particular clip.
+Expected: PASS. The seeded expectations in this task's test block were **corrected to the measured indices** when the task ran: seed `'route:/orders'` over a 4-clip pool lands on index 3 → `/clips/clips/d.mp4`, and seed `'x'` lands on index 2 → `/clips/clips/c.mp4` (each confirmed stable across repeated runs and by calling `seededIndex` directly). The plan originally guessed `a.mp4` for both. Do **not** change the PRNG to force a particular clip: the requirement is determinism, not a particular clip.
 
 - [ ] **Step 5: Commit**
 
@@ -2003,7 +2007,9 @@ describe('seamMetrics', () => {
 
   it('separates a jump at the seam from ordinary motion', () => {
     const smooth = seamMetrics(flatFrames([0, 10, 20, 30, 40]), 4)
-    const jumped = seamMetrics(flatFrames([0, 10, 20, 30, 200]), 4)
+    // The original fixture used 200, which asks for `200 > 40 * 5` — unsatisfiable by any correct
+    // `seam = mae(last, first)`. 250 is the smallest level that exhibits the claimed 5x gap.
+    const jumped = seamMetrics(flatFrames([0, 10, 20, 30, 250]), 4)
     expect(jumped.seam).toBeGreaterThan(smooth.seam * 5)
     expect(jumped.seam).toBeGreaterThan(jumped.stepP90)
   })
@@ -2056,6 +2062,34 @@ describe('checkClip', () => {
 
   it('tolerates a seam within 10 percent', () => {
     expect(checkClip({ ...base, seamOutput: { ...base.seamOutput, seam: 19.7 } })).toEqual([])
+  })
+
+  it('records a sub-noise-floor regression as review, not as a failure', () => {
+    const findings = checkClip({
+      ...base,
+      seamInput: { stepMean: 5, stepP90: 8, seam: 1.0 },
+      seamOutput: { stepMean: 5, stepP90: 8, seam: 1.5 },
+    })
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'seam-regression-noise', level: 'review' }))
+    expect(findings.filter((finding) => finding.level === 'error')).toEqual([])
+  })
+
+  it('still fails a regression at or above the noise floor', () => {
+    const findings = checkClip({
+      ...base,
+      seamInput: { stepMean: 5, stepP90: 8, seam: 2.0 },
+      seamOutput: { stepMean: 5, stepP90: 8, seam: 2.5 },
+    })
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'seam-regression', level: 'error' }))
+  })
+
+  it('treats just below the noise floor as review', () => {
+    const findings = checkClip({
+      ...base,
+      seamInput: { stepMean: 5, stepP90: 8, seam: 1.99 },
+      seamOutput: { stepMean: 5, stepP90: 8, seam: 2.3 },
+    })
+    expect(findings).toContainEqual(expect.objectContaining({ code: 'seam-regression-noise', level: 'review' }))
   })
 
   it('flags a visible loop jump for human review without failing the build', () => {
@@ -2119,6 +2153,8 @@ export interface QcFinding {
 
 export const SSIM_FLOOR = 0.93
 export const SEAM_REGRESSION = 1.1
+/** Below this absolute MAE the 10 % rule measures encoder noise, not a visible loop jump. */
+export const SEAM_NOISE_FLOOR = 2
 
 function mae(frames: Uint8Array, aOffset: number, bOffset: number, frameSize: number): number {
   let sum = 0
@@ -2152,18 +2188,17 @@ export function checkClip(input: QcInput): QcFinding[] {
   if (Math.abs(input.actualFrames - input.expectedFrames) > 1) {
     add('error', 'frame-count', `expected ${input.expectedFrames} frames, got ${input.actualFrames}`)
   }
-  if (Math.abs(input.actualDurationMs - input.expectedDurationMs) > 100) {
+  // The boundary is inclusive: the task's own test requires a 100 ms drift to fail.
+  if (Math.abs(input.actualDurationMs - input.expectedDurationMs) >= 100) {
     add('error', 'duration', `expected ${input.expectedDurationMs} ms, got ${input.actualDurationMs} ms`)
   }
   if (input.ssim < SSIM_FLOOR) {
     add('error', 'ssim', `SSIM ${input.ssim.toFixed(4)} is below the ${SSIM_FLOOR} floor`)
   }
   if (input.seamOutput.seam > input.seamInput.seam * SEAM_REGRESSION && input.seamInput.seam > 0.5) {
-    add(
-      'error',
-      'seam-regression',
-      `seam grew from ${input.seamInput.seam.toFixed(2)} to ${input.seamOutput.seam.toFixed(2)}`,
-    )
+    const grew = `seam grew from ${input.seamInput.seam.toFixed(2)} to ${input.seamOutput.seam.toFixed(2)}`
+    if (input.seamInput.seam >= SEAM_NOISE_FLOOR) add('error', 'seam-regression', grew)
+    else add('review', 'seam-regression-noise', `${grew}, below the ${SEAM_NOISE_FLOOR} noise floor - recorded, not a failure`)
   }
   if (input.seamOutput.seam > input.seamOutput.stepP90) {
     add('review', 'loop-seam-review', `seam ${input.seamOutput.seam.toFixed(2)} exceeds the p90 step ${input.seamOutput.stepP90.toFixed(2)}`)

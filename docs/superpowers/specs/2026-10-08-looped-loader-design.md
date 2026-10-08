@@ -354,7 +354,14 @@ prediction is testable and is checked, not assumed.
 The pipeline exits non-zero on violation instead of warning. Checks per clip:
 
 1. Frame count and duration match the expected values after fps normalisation (±1 frame).
-2. `loopSeam` recomputed on the output is not worse than the input by more than 10 %.
+2. `loopSeam` recomputed on the output is not worse than the input by more than 10 %,
+   **above an absolute noise floor of 2** on the 0–255 MAE scale. Below that floor the
+   same regression is recorded as a `review` finding (`seam-regression-noise`) rather
+   than failing the build: at that magnitude the ratio measures encoder noise, not a
+   visible loop jump. Measured on the corpus, this rule was inverted — it failed six
+   clips whose seam moved by 0.1–0.6 gray levels while the two clips with genuinely
+   visible jumps (seam 27.09 and 22.77) only reached `review`. Ruled by the owner on
+   2026-10-08; see `PROGRESS.md` D-21.
 3. SSIM against a lossless `-qp 0` reference ≥ 0.93; the measured value is recorded.
 4. Size is within the budget after adaptation.
 5. On-disk size and sha256 match the manifest exactly.
@@ -370,10 +377,16 @@ the mean and 90th-percentile mean-absolute-error between adjacent frames; `seam`
 MAE between the last and the first frame. A clip whose `seam` sits above its `stepP90`
 has a visible jump at the loop point.
 
-This is a heuristic, and it is reported as one: it flags, it never deletes. First
-results on the corpus: ~25 clips sit at or below their typical frame step, 4 clips
+This is a heuristic, and it is reported as one: it flags, it never deletes. The
+design-time probe put ~25 clips at or below their typical frame step and named four
 (`2F4wy0zlipQSr9BMqGVE3nnK_OZfD1QKxjKCZeoq434`, `2p1qoycrgfm31`, `TGH-SlSN…`,
-`u3dob97sw2421`) are clearly above it and get `loopSeam.flag: "review"`.
+`u3dob97sw2421`) as clearly above it.
+
+**Measured on the transcoded corpus (2026-10-08, `qc-report.md`):** the `loop-seam-review`
+tier fired on **eight** clips — `0AMt9sYf…`, `2p1qoycrgfm31`, `TGH-SlSN…`, `azgfEFJh…`,
+`d3whIZNc…`, `gw2u04xr37r11`, `tXHw0yKm…`, `u3dob97sw2421` — so the design-time list was
+neither complete nor exact; `2F4wy0zl…` is not among them. The metric's own values are
+what the manifest records, and the report is the authority, not this paragraph.
 
 A naive proxy — comparing only `seam` against `stepMean` — was tried first and
 rejected: on near-static clips a tiny absolute difference inflates the ratio, which is

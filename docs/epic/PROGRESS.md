@@ -3,9 +3,9 @@
 The only place where story status lives. Update it at the close of every story, with
 evidence. Check it at the start of every session.
 
-**Current focus:** wave 3 — **E1.3** (`.worktrees/core`) and **E2.2** (`.worktrees/tools`) in parallel, each with a `MiniMax-M3` review. E1.1, E1.2 and E2.1 are done.
+**Current focus:** wave 4 — **E1.5** (`.worktrees/vue`) and the owner-ruled QC-gate noise floor (`.worktrees/qcgate`) in parallel. E1.3, E1.4 and E2.2 are done; E2.3 waits on the gate change.
 **Baseline commit:** `a13b923` (spec, build plan and epic docs committed; no code yet).
-**Test baseline:** 50 tests across 4 files on the integration branch after wave 2 (`acdc054`): core 32, tools 18.
+**Test baseline:** 95 tests across 8 files on the integration branch after wave 3 (`e0a2158`): core 49 (4 files), tools 46 (4 files).
 
 ## Status
 
@@ -13,13 +13,13 @@ evidence. Check it at the start of every session.
 |---|---|---|---|---|
 | E1.1 | Workspace, licences, CI, picker | done | commit `ae91409`; `pnpm test` 10/10, `pnpm typecheck` green; `pnpm-lock.yaml` committed | 19 files, 1057 insertions; report `.waves/reports/E1.1.md` |
 | E1.2 | Manifest validation, URL resolution | done | commit `d214a83`, merged `21d976c`; core 32/32 green, `pnpm typecheck` green | 2 plan defects found and fixed in the plan file (D-18); report `.waves/reports/E1.2.md` |
-| E1.3 | Loader state machine, video lifecycle | in-progress | — | review-worthy |
-| E1.4 | Vue adapter, composables, theming | todo | — | — |
-| E1.5 | Vue behaviour tests | todo | — | reduced-motion flip, autoplay rejection, SSR |
+| E1.3 | Loader state machine, video lifecycle | done | commit `ce50a1e`, merged `6c00bf6`; core 49/49 green, `pnpm typecheck` and `pnpm build` green | review `revise` (critical=1) → fix round → re-review `approve`; plan corrections D-20 |
+| E1.4 | Vue adapter, composables, theming | done, unmerged | commit `b63bb53` on `feat/vue`; build emits `index.js`, `index.d.ts` and `index.css`, both CSS selectors present, `pnpm typecheck` green | held unmerged on purpose: the package has no test files until E1.5, so `pnpm -r test` would be red between them |
+| E1.5 | Vue behaviour tests | in-progress | — | review-worthy; reduced-motion flip, autoplay rejection, SSR |
 | E1.6 | Demo playground | todo | — | needs E2.3 for real clips |
 | E2.1 | Transcode ladder, ffmpeg layer | done | commit `ce6c313`, merged `acdc054`; tools 18/18 green, `pnpm typecheck` green | lockfile staged with the `@types/node` addition (D-19); report `.waves/reports/E2.1.md` |
-| E2.2 | QC gate, manifest, CLI | in-progress | — | review-worthy |
-| E2.3 | Corpus transcode, assets package | todo | — | **runs in the main checkout** (`gifs/` is untracked) |
+| E2.2 | QC gate, manifest, CLI | done | commit `f659786`, merged `e0a2158`; tools 46/46 green (0 skipped), `pnpm typecheck` and `pnpm build` green | review `revise` (critical=4) → fix round → re-review `approve` (10/12 new tests red on the old commit); D-21 in flight |
+| E2.3 | Corpus transcode, assets package | blocked | — | **runs in the main checkout** (`gifs/` is untracked); blocked on D-21 — the seam gate fails the corpus with 6 noise-level errors until the noise floor lands |
 | E2.4 | Per-clip provenance in the manifest | todo | — | review-worthy; blocks E4.3 |
 | E3.1 | Browser verification with evidence | todo | — | main session only |
 | E3.2 | Documentation and recipes | todo | — | — |
@@ -64,6 +64,9 @@ are not repeated here.
 | D-17 | Wave 1 ran Task 1 in the main checkout on `feat/looped-loader`, as the plan's `Start` section directs, and it is the only task besides Task 6 with no worktree | Task 1 creates the workspace every later worktree branches from, so there is nothing to branch from until it lands; the runbook's isolation rule starts at Task 2 | 2026-10-08 |
 | D-18 | The plan's Task 2 `manifest.ts` block was wrong twice and is corrected in the plan file: 13 `invalid(...)` calls were bare statements that never threw, and three `as Clip[...]` / `as Manifest[...]` casts fail under `exactOptionalPropertyTypes` | the plan's own tests fail 12/12 and `pnpm typecheck` fails with the block verbatim — observed, not assumed. Blast radius: every story that consumes `parseManifest` (E1.3, E1.4, E1.5, E1.6, E3.2, E3.4) and any later reader who copies the block | 2026-10-08 |
 | D-19 | The plan's Task 4, 7 and 9 commit lists omitted `pnpm-lock.yaml`; all three are corrected in the plan file | adding `@types/node` (T4), the Vue toolchain (T7) and the demo's deps (T9) rewrites the root lockfile, and CI installs with `--frozen-lockfile`, so the plan as written turns the first push red for a reason that looks nothing like its cause | 2026-10-08 |
+| D-20 | Wave 3's plan blocks were wrong four more times and are corrected in the plan file: Task 3 passed explicit `undefined` into `buildPool`'s optional options under `exactOptionalPropertyTypes`, and two seeded expectations named the wrong clip; Task 5's duration guard used `> 100` where its own test requires exactly 100 ms to fail, and its seam fixture asked for `200 > 200`, unsatisfiable by any correct implementation | every one was observed as a failing test before anything changed. Rule applied: fix the code when the code can satisfy the test, fix the fixture when no correct implementation can. Blast radius: E1.5, E1.6, E3.2, E3.4 | 2026-10-08 |
+| D-21 | The seam-regression gate fails the build only above an absolute noise floor of 2 (MAE on the 0–255 scale); below it the same regression is recorded as a `review` finding with code `seam-regression-noise` | measured on the real corpus: six clips failed at seam growth of 0.1–0.6 gray levels — invisible encoder noise — while the two clips with genuinely visible jumps (seam 27.09 and 22.77) only reached `review`, so the error tier was inverted. **Owner's ruling, 2026-10-08**; spec 5.3 updated by that decision | 2026-10-08 |
+| D-22 | A complete `packages/assets` tree appeared in the main checkout during wave 3 (20:52–20:53) although no dsh session in this workspace ran the transcode — verified by decompressing every session transcript and searching for the invocation. The owner ruled: delete it, and let E2.3 produce it through the process | the tree was byte-identical to a fresh run (4 049 965 bytes, same sha256 set), so nothing was lost; but an artefact no process of this wave produced must never be adopted as a task's output. Recorded as an incident, not absorbed | 2026-10-08 |
 
 ## Technical debt and open items
 
@@ -77,6 +80,8 @@ are not repeated here.
 | TD-6 | No published example app; consumers get the README recipes and the demo source | E3.2 | accepted |
 | TD-7 | No docs site and no social preview image | — | accepted (YAGNI for a single-component library) |
 | TD-8 | The demo's `test` script is a no-op that says so; its acceptance is a browser run | E3.1 | accepted |
+| TD-9 | `clip.id` is not validated as URL-safe, in the CLI or in the core: a source file named `a b#c.mp4` becomes an un-fetchable `sources[].src` | E2.4 or E3.4 | open — flagged by the E2.2 review, deliberately deferred out of that story |
+| TD-10 | `qc-report.json` records findings but not the per-clip SSIM, so the plan's "SSIM within 0.01 of the floor" owner gate cannot be checked from the committed artefacts; the one budget-exceeded clip's SSIM (0.9493) was measured directly by the Lead and recorded in the wave log | E2.3 | open |
 
 ## Baseline metrics
 
@@ -108,3 +113,5 @@ what actually happened, as opposed to what was planned.
 | 2026-10-08 | brainstorm → spec → build plan → epic, runbook, tracker | repo created (private), spec and plan committed; 10 plan defects found and fixed in review; no code yet |
 | 2026-10-08 | wave 1 — E1.1 | subagent run started; workers `glm-5.3-flash`, reviewers `MiniMax-M3`; E1.1 `done` at `ae91409` (10 tests green, lockfile committed), wave 2 dispatched |
 | 2026-10-08 | wave 2 — E1.2 + E2.1 | both `done` (`d214a83`, `ce6c313`) and merged (`21d976c`, `acdc054`); integration branch 50/50 tests, typecheck and build green; 2 plan defects fixed (D-18, D-19); wave 3 dispatched |
+| 2026-10-08 | wave 3 — E1.3 + E2.2 | both `done` after a fix round each: E1.3 `ce50a1e` merged `6c00bf6`, E2.2 `f659786` merged `e0a2158`; integration branch 95/95 tests, typecheck and build green; both re-reviews `approve`; incident D-22 and the owner's gate ruling D-21 recorded |
+| 2026-10-08 | wave 4 — E1.4 done, E1.5 and the QC gate in flight | E1.4 `b63bb53` (unmerged by design so the suite never goes red); the real corpus reproduced at 3.86 MB with 6 noise-level seam errors and one budget-exceeded clip at SSIM 0.9493 — exactly what D-21 answers |
