@@ -155,6 +155,8 @@ onBeforeUnmount(() => {
   width: var(--ll-size, 96px);
   max-width: 100%;
   height: auto;
+}
+.ll-rounded .ll-video {
   border-radius: var(--ll-radius, 12px);
 }
 .ll-spinner {
