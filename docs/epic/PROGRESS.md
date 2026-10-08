@@ -3,7 +3,7 @@
 The only place where story status lives. Update it at the close of every story, with
 evidence. Check it at the start of every session.
 
-**Current focus:** wave 5 in flight — **E1.6** (`.worktrees/demo`) and **E3.2** (`.worktrees/docs`) in parallel; then **E3.1** (browser verification) in the main session. Everything before them is done and merged.
+**Current focus:** E3.2's fix round (stylesheet export + the spec §4.6 fade) in `.worktrees/docs`, then its re-review, then **E3.1** (browser verification) in the main session. E1.6 is merged at `2e0284e`.
 **Baseline commit:** `a13b923` (spec, build plan and epic docs committed; no code yet).
 **Test baseline:** 109 automated tests on the integration branch after the Vue merge (`87bceed`) — core 49, tools 49, vue 11 under jsdom — plus the assets verifier, which reads the committed media rather than a fixture. Operational note: run `pnpm install` after **every** merge that touches the lockfile, or the newly merged package's own suite fails for want of its dependencies, which looks like a code failure and is not.
 
@@ -67,6 +67,7 @@ are not repeated here.
 | D-20 | Wave 3's plan blocks were wrong four more times and are corrected in the plan file: Task 3 passed explicit `undefined` into `buildPool`'s optional options under `exactOptionalPropertyTypes`, and two seeded expectations named the wrong clip; Task 5's duration guard used `> 100` where its own test requires exactly 100 ms to fail, and its seam fixture asked for `200 > 200`, unsatisfiable by any correct implementation | every one was observed as a failing test before anything changed. Rule applied: fix the code when the code can satisfy the test, fix the fixture when no correct implementation can. Blast radius: E1.5, E1.6, E3.2, E3.4 | 2026-10-08 |
 | D-21 | The seam-regression gate fails the build only above an absolute noise floor of 2 (MAE on the 0–255 scale); below it the same regression is recorded as a `review` finding with code `seam-regression-noise` | measured on the real corpus: six clips failed at seam growth of 0.1–0.6 gray levels — invisible encoder noise — while the two clips with genuinely visible jumps (seam 27.09 and 22.77) only reached `review`, so the error tier was inverted. **Owner's ruling, 2026-10-08**; spec 5.3 updated by that decision | 2026-10-08 |
 | D-22 | A complete `packages/assets` tree appeared in the main checkout during wave 3 (20:52–20:53) although no dsh session in this workspace ran the transcode — verified by decompressing every session transcript and searching for the invocation. The owner ruled: delete it, and let E2.3 produce it through the process | the tree was byte-identical to a fresh run (4 049 965 bytes, same sha256 set), so nothing was lost; but an artefact no process of this wave produced must never be adopted as a task's output. Recorded as an incident, not absorbed | 2026-10-08 |
+| D-23 | The Vue package must expose its stylesheet — `"./style.css": "./dist/index.css"` in `exports`, and `sideEffects: ["**/*.css"]` in place of `false` | Vite library mode emits the scoped CSS as a separate `dist/index.css` and `dist/index.js` does not import it, so with no subpath export an npm consumer cannot load the styles by any route — proven by a failing build in a packed-tarball app. Spec §4.8's "inlined in the built bundle, no CSS import needed" was false for this build and is corrected. The `sideEffects` glob is the second half: `false` lets a consumer's bundler tree-shake the very import that makes the component visible | 2026-10-08 |
 
 ## Technical debt and open items
 
@@ -84,6 +85,7 @@ are not repeated here.
 | TD-10 | `qc-report.json` records findings but not the per-clip SSIM, so the plan's "SSIM within 0.01 of the floor" owner gate cannot be checked from the committed artefacts; the one budget-exceeded clip's SSIM (0.9493) was measured directly by the Lead and recorded in the wave log | E2.3 | open — not worth a re-run on its own; fold it into the next change that re-encodes |
 | TD-11 | The Vue `rounded` prop is declared and bound as a class, but no rule in the SFC targets it, so `rounded={false}` does nothing | E3.2 | being fixed in E3.2, because documenting a prop that does nothing would be worse than the defect |
 | TD-12 | `autoplay-blocked` is emitted on every rejected `play()`, not once per loader; the spec's wording ("one retry, and `error('autoplay-blocked')") is singular and can be read either way | E1.5 | accepted — the review called it a defensible trade-off; the behaviour is now documented rather than changed |
+| TD-13 | Spec §4.6 promises the clip fades in over 150 ms; the plan's Task 7 never implemented it, so the plan omitted a spec requirement | E3.2 | being fixed in E3.2's fix round, together with the stylesheet export |
 
 ## Baseline metrics
 

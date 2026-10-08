@@ -271,8 +271,16 @@ least `minVisible`. Claiming `minVisibleMs` as a component prop would be a lie.
 
 CSS custom properties on the root, no CSS framework: `--ll-size`, `--ll-radius`,
 `--ll-bg`, `--ll-spinner-color`, `--ll-spinner-width`, `--ll-fade-ms`. A `class` on the
-component lands on the root element. Styles are scoped inside the SFC and inlined in
-the built bundle, so a consumer needs no CSS import.
+component lands on the root element.
+
+The styles are scoped inside the SFC but they are **not** inlined in the built bundle:
+Vite library mode emits them as a separate `dist/index.css`, and `dist/index.js` does not
+import it. A consumer must therefore import the stylesheet explicitly —
+`import '@topclans/looped-loader-vue/style.css'` — and the package's `exports` map
+exposes that subpath. The design-time claim that "a consumer needs no CSS import" was
+false for this build; measured in a packed-tarball app and corrected on 2026-10-08
+(PROGRESS.md D-23). Without the import the loader renders unstyled — an invisible
+spinner — which is exactly the failure the component exists to prevent.
 
 ### 4.9 Demo playground
 
@@ -294,7 +302,10 @@ packages by workspace path, so a broken public API breaks the demo first.
 - pnpm workspaces; `core` and `tools`/`demo` in TS, the Vue package as SFCs.
 - Vite library mode (`preserveModules`) for `core` and `vue`, declarations emitted
   with `vite-plugin-dts`, `vue-tsc` for type-checking.
-- `sideEffects: false`, ESM only, `type: module`, `exports` map with types.
+- `sideEffects: false` for `core` and `tools`. The Vue package instead declares
+  `sideEffects: ["**/*.css"]`, so a consumer's bundler cannot tree-shake away the
+  stylesheet import §4.8 requires. ESM only, `type: module`, `exports` map with types,
+  and for the Vue package a `./style.css` → `./dist/index.css` subpath.
 - `peerDependencies: vue ^3.4` for the Vue package; `core` has zero dependencies.
 - Lockstep versioning across the three published packages for v1 (changesets noted as
   a later option, not built now).
