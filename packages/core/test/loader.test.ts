@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createLoopedLoader, prefersReducedMotion, type VideoLike } from '../src/loader.js'
 import { resetRecent } from '../src/pool.js'
 import type { Manifest } from '../src/pool.js'
@@ -85,6 +85,13 @@ describe('createLoopedLoader', () => {
   beforeEach(() => {
     resetRecent()
     vi.restoreAllMocks()
+    vi.unstubAllGlobals()
+    vi.useRealTimers()
+  })
+
+  // A failing test must not leak fake timers or global stubs into later tests.
+  afterEach(() => {
+    vi.useRealTimers()
     vi.unstubAllGlobals()
   })
 
@@ -345,6 +352,71 @@ describe('createLoopedLoader', () => {
     expect(video.src).toBe('')
     expect(video.loadCalls).toBe(1)
     expect(video.listenerCount('playing')).toBe(0)
+  })
+
+  it('resolves exactly once when attach() lands after start()', async () => {
+    vi.useFakeTimers()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    const video = fakeVideo()
+    const onError = vi.fn()
+    const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 120, onError })
+    loader.start()
+    loader.attach(video)
+    await vi.advanceTimersByTimeAsync(120)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    expect(loader.state).not.toBe('error')
+    loader.destroy()
+    vi.useRealTimers()
+  })
+
+  it('reaches playing on a one-clip pool when attach() lands after start()', async () => {
+    vi.useFakeTimers()
+    const video = fakeVideo()
+    const onError = vi.fn()
+    const loader = createLoopedLoader({ baseUrl: '/clips', manifest, clip: 'a', seed: 'x', delayMs: 120, onError })
+    loader.start()
+    await vi.advanceTimersByTimeAsync(0)
+    loader.attach(video)
+    await vi.advanceTimersByTimeAsync(120)
+    video.emit('playing')
+    expect(loader.state).toBe('playing')
+    expect(onError).not.toHaveBeenCalled()
+    loader.destroy()
+    vi.useRealTimers()
+  })
+
+  it('does not let attach() shortcut delayMs', async () => {
+    vi.useFakeTimers()
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    const video = fakeVideo()
+    const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 120 })
+    loader.start()
+    loader.attach(video)
+    await vi.advanceTimersByTimeAsync(100)
+    expect(fetchSpy).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(40)
+    expect(fetchSpy).toHaveBeenCalledTimes(1)
+    loader.destroy()
+    vi.useRealTimers()
+  })
+
+  it('never fetches when a video is attached under reduced motion', async () => {
+    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+      new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+    )
+    const video = fakeVideo()
+    const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 0 })
+    loader.start()
+    loader.attach(video)
+    await flush()
+    expect(fetchSpy).not.toHaveBeenCalled()
+    expect(loader.state).toBe('idle')
+    loader.destroy()
   })
 })
 
