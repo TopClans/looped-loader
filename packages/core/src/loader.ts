@@ -274,8 +274,6 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
         element.muted = true
         element.src = src
         requestPlay()
-      } else if (started && !destroyed && state !== 'error') {
-        void resolve()
       }
     },
 
