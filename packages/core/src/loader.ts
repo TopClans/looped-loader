@@ -68,6 +68,8 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
   let destroyed = false
   let started = false
   let resolving = false
+  let visibilityBound = false
+  let interactionRetryUsed = false
   let observed: Element | null = null
   let observer: IntersectionObserver | null = null
   const failed = new Set<string>()
@@ -168,7 +170,6 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
 
     clip = candidate
     src = nextSrc
-    attempts = 0
     options.onSelect?.(candidate)
     setState('loading')
     bindToElement()
@@ -206,9 +207,13 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
   }
 
   function onAutoplayBlocked(cause: unknown): void {
+    if (destroyed) return
     emitError(new LoopedLoaderError('autoplay-blocked', 'the browser refused to start playback', cause))
     if (typeof document === 'undefined') return
-    // Re-registering with { once: true } keeps exactly one pending retry, and the
+    if (interactionRetryUsed) return
+    interactionRetryUsed = true
+    // Exactly one interaction-triggered retry per loader: the first rejection arms
+    // the { once: true } pointerdown handler, later rejections only report. The
     // handler is removed in destroy() so a destroyed loader cannot be resumed by a
     // stray gesture later.
     document.removeEventListener('pointerdown', retryOnInteraction)
@@ -227,8 +232,9 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
   }
 
   function bindVisibility(): void {
-    if (typeof document === 'undefined') return
+    if (typeof document === 'undefined' || visibilityBound) return
     document.addEventListener('visibilitychange', onVisibilityChange)
+    visibilityBound = true
   }
 
   return {
@@ -254,6 +260,12 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
     },
 
     attach(element: VideoLike) {
+      if (element === video) return
+      if (video) {
+        video.removeEventListener('playing', onPlaying)
+        video.removeEventListener('error', onMediaFailure)
+        video.pause()
+      }
       video = element
       element.addEventListener('playing', onPlaying)
       element.addEventListener('error', onMediaFailure)
@@ -262,7 +274,7 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
         element.muted = true
         element.src = src
         requestPlay()
-      } else if (started) {
+      } else if (started && !destroyed && state !== 'error') {
         void resolve()
       }
     },

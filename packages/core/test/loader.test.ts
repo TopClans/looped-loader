@@ -61,6 +61,26 @@ function fakeVideo() {
 
 const flush = () => new Promise((resolve) => setTimeout(resolve, 0))
 
+function fakeDocument() {
+  const listeners = new Map<string, Set<() => void>>()
+  return {
+    hidden: false,
+    addEventListener(type: string, listener: () => void) {
+      if (!listeners.has(type)) listeners.set(type, new Set())
+      listeners.get(type)?.add(listener)
+    },
+    removeEventListener(type: string, listener: () => void) {
+      listeners.get(type)?.delete(listener)
+    },
+    emit(type: string) {
+      for (const listener of [...(listeners.get(type) ?? [])]) listener()
+    },
+    listenerCount(type: string) {
+      return listeners.get(type)?.size ?? 0
+    },
+  }
+}
+
 describe('createLoopedLoader', () => {
   beforeEach(() => {
     resetRecent()
@@ -101,6 +121,33 @@ describe('createLoopedLoader', () => {
     loader.destroy()
   })
 
+  it('makes attach idempotent: a re-attached element stops driving the loader', async () => {
+    const doc = fakeDocument()
+    vi.stubGlobal('document', doc)
+    const a = fakeVideo()
+    const b = fakeVideo()
+    const loader = createLoopedLoader({ baseUrl: '/clips', manifest, seed: 'x', delayMs: 0 })
+    loader.start()
+    await flush()
+    loader.attach(a)
+    loader.attach(a)
+    expect(a.listenerCount('playing')).toBe(1)
+    expect(a.listenerCount('error')).toBe(1)
+    expect(doc.listenerCount('visibilitychange')).toBe(1)
+    loader.attach(b)
+    expect(a.listenerCount('playing')).toBe(0)
+    expect(a.listenerCount('error')).toBe(0)
+    expect(a.pauseCalls).toBe(1)
+    expect(doc.listenerCount('visibilitychange')).toBe(1)
+    b.emit('playing')
+    expect(loader.state).toBe('playing')
+    a.emit('playing')
+    expect(loader.state).toBe('playing')
+    a.emit('error')
+    expect(loader.state).toBe('playing')
+    loader.destroy()
+  })
+
   it('fetches and validates the manifest when none is passed in', async () => {
     vi.spyOn(globalThis, 'fetch').mockResolvedValue(
       new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
@@ -123,6 +170,25 @@ describe('createLoopedLoader', () => {
     await flush()
     expect(loader.state).toBe('error')
     expect(onError.mock.calls[0]?.[0].code).toBe('manifest-fetch')
+    loader.destroy()
+  })
+
+  it('keeps error terminal when the host attaches after a manifest failure', async () => {
+    vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'))
+    const video = fakeVideo()
+    const states: string[] = []
+    const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 0, onState: (state) => states.push(state) })
+    loader.start()
+    await flush()
+    await flush()
+    expect(loader.state).toBe('error')
+    loader.attach(video)
+    await flush()
+    await flush()
+    expect(video.listenerCount('playing')).toBe(1)
+    expect(video.listenerCount('error')).toBe(1)
+    expect(loader.state).toBe('error')
+    expect(states).toEqual(['resolving', 'error'])
     loader.destroy()
   })
 
@@ -180,6 +246,27 @@ describe('createLoopedLoader', () => {
     loader.destroy()
   })
 
+  it('caps clip attempts at three in a 4-clip pool where every clip fails', async () => {
+    const video = fakeVideo()
+    const onSelect = vi.fn()
+    const onError = vi.fn()
+    const loader = createLoopedLoader({ baseUrl: '/clips', manifest, seed: 'x', delayMs: 0, onSelect, onError })
+    loader.start()
+    await flush()
+    loader.attach(video)
+    video.emit('error')
+    await flush()
+    video.emit('error')
+    await flush()
+    video.emit('error')
+    await flush()
+    expect(loader.state).toBe('error')
+    expect(onSelect).toHaveBeenCalledTimes(3)
+    expect(onError).toHaveBeenCalledTimes(1)
+    expect(onError.mock.calls.at(-1)?.[0].code).toBe('clip-fetch')
+    loader.destroy()
+  })
+
   it('distinguishes a decoder failure from a fetch failure', async () => {
     const video = fakeVideo()
     video.error = { code: 3 }
@@ -206,6 +293,44 @@ describe('createLoopedLoader', () => {
     expect(loader.state).not.toBe('error')
     expect(onError).toHaveBeenCalledWith(expect.objectContaining({ code: 'autoplay-blocked' }))
     loader.destroy()
+  })
+
+  it('retries autoplay on interaction exactly once, then only reports', async () => {
+    const doc = fakeDocument()
+    vi.stubGlobal('document', doc)
+    const video = fakeVideo()
+    video.playError = new Error('NotAllowedError')
+    const onError = vi.fn()
+    const loader = createLoopedLoader({ baseUrl: '/clips', manifest, seed: 'x', delayMs: 0, onError })
+    loader.start()
+    await flush()
+    loader.attach(video)
+    await flush()
+    expect(video.playCalls).toBe(1)
+    expect(onError).toHaveBeenCalledTimes(1)
+    doc.emit('pointerdown')
+    await flush()
+    expect(video.playCalls).toBe(2)
+    doc.emit('pointerdown')
+    await flush()
+    expect(video.playCalls).toBe(2)
+    expect(onError).toHaveBeenCalledTimes(2)
+    expect(doc.listenerCount('pointerdown')).toBe(0)
+    loader.destroy()
+  })
+
+  it('does not emit autoplay-blocked from a rejection that lands after destroy', async () => {
+    const video = fakeVideo()
+    video.playError = new Error('NotAllowedError')
+    const onError = vi.fn()
+    const loader = createLoopedLoader({ baseUrl: '/clips', manifest, seed: 'x', delayMs: 0, onError })
+    loader.start()
+    await flush()
+    loader.attach(video)
+    loader.destroy()
+    await flush()
+    expect(onError).not.toHaveBeenCalled()
+    expect(loader.state).not.toBe('error')
   })
 
   it('releases the decoder on destroy', async () => {
