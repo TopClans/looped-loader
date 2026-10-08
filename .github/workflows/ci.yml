@@ -20,6 +20,13 @@ jobs:
       - name: Install ffmpeg (integration tests skip without it, CI should not)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      # `pnpm build` must run BEFORE `pnpm typecheck`. packages/vue and packages/demo
+      # resolve the workspace dependency `@topclans/looped-loader-core` through the
+      # declarations it emits into `packages/core/dist`, which is gitignored and
+      # therefore absent in a fresh clone; without it `vue-tsc` fails with TS2307 and
+      # a cascade of TS7006 "implicitly has an 'any' type". The same applies to
+      # `pnpm test`, whose jsdom suites import the built core. The first push of
+      # `main` went red exactly here, which is how the ordering was found.
       - run: pnpm build
+      - run: pnpm typecheck
       - run: pnpm test

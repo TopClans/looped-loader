@@ -349,8 +349,12 @@ jobs:
       - name: Install ffmpeg (integration tests skip without it, CI should not)
         run: sudo apt-get update && sudo apt-get install -y ffmpeg
       - run: pnpm install --frozen-lockfile
-      - run: pnpm typecheck
+      # Build first: packages/vue and packages/demo resolve `@topclans/looped-loader-core`
+      # through the declarations it emits into `packages/core/dist`, which is gitignored and
+      # absent in a fresh clone. Type-checking before building fails with TS2307 and a cascade
+      # of TS7006. The first push of `main` went red exactly here (PROGRESS.md D-26).
       - run: pnpm build
+      - run: pnpm typecheck
       - run: pnpm test
 ```
 
