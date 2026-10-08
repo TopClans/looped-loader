@@ -2630,12 +2630,13 @@ Expected: `wrote 32 clips, N MB, 0 error(s), M review(s)`, exit code 0, and a `.
 Get-Content packages/assets/qc-report.md
 ```
 
-Check and record, because Task 11 quotes these numbers and Task 10 depends on them:
+Check and record, because Task 11 quotes these numbers and Task 10 depends on them. **The measured run of 2026-10-08 is recorded here, so a deviation is a finding rather than a typo:**
 
-- total size ≤ 5 MB (`5242880` bytes);
-- the only `budget-exceeded` review is `u3dob97sw2421` (predicted in the spec), or explain any other;
-- the `loop-seam-review` list matches the four clips flagged during the design: `2F4wy0zlipQSr9BMqGVE3nnK_OZfD1QKxjKCZeoq434`, `2p1qoycrgfm31`, `TGH-SlSNsq9B1KAxoZ9IGjAX7SUTVlTOBq3rg6BRrfI`, `u3dob97sw2421`;
-- `pkgs/assets/manifest.json` has 32 entries and its `encode.note` is `base` for at least 27 of them.
+- total size ≤ 5 MB (`5242880` bytes) — **measured 4 049 965 bytes (3.86 MB)**;
+- the only `budget-exceeded` review is `u3dob97sw2421` (predicted in the spec), or explain any other — **measured: 430 452 bytes with the ladder spent, SSIM 0.9493, i.e. 1.9 points clear of the 0.93 floor, so the "ask the owner" trigger did not fire**;
+- the `loop-seam-review` list — **measured, seven clips**: `0AMt9sYf…`, `2p1qoycrgfm31`, `TGH-SlSN…`, `azgfEFJh…`, `d3whIZNc…`, `gw2u04xr37r11`, `tXHw0yKm…`. The design-time list of four was wrong in both directions: `2F4wy0zl…` is not flagged at all, and `u3dob97sw2421` reaches `budget-exceeded` rather than `loop-seam-review`;
+- six further clips carry `seam-regression-noise` reviews — the sub-noise-floor tier introduced by the owner's ruling D-21 — which is why a green run reports **0 errors and 14 reviews** (7 + 6 + 1), not the 0 errors and 4 reviews this plan originally predicted;
+- `packages/assets/manifest.json` has 32 entries and its `encode.note` is `base` for at least 27 of them — **measured exactly 27**, plus 4 `budget-adapted` (`TGH-SlSN…` crf 30, `azgfEFJh…` crf 29, `gw2u04xr37r11` crf 28, `wsijo3cpfb831` crf 27).
 
 **Ask the owner** if any clip needs a decision: an SSIM within 0.01 of the floor, a different clip landing in `budget-exceeded`, or any proposal to drop or replace a clip.
 
@@ -2655,7 +2656,7 @@ pnpm --filter @topclans/looped-loader-assets test
 
 Expected: `assets verified: 32 clips, N MB`.
 
-Then prove the check can actually fail, because a check that cannot fail is decoration: edit one `sha256.mp4` value in `manifest.json` to `"deadbeef"`, re-run, confirm a non-zero exit and a `sha256 mismatch` line, then restore the file with `git checkout -- packages/assets/manifest.json` — that path is in this task's own write scope, so the restore is safe here and nowhere else.
+Then prove the check can actually fail, because a check that cannot fail is decoration: copy `manifest.json` to a backup **outside the repository** (`$env:TEMP`), edit one `sha256.mp4` value in place to `"deadbeef"`, re-run the verifier, confirm a non-zero exit and a `sha256 mismatch` line, then restore from that backup and confirm the file hashes identically to it. The plan's original wording used `git checkout -- packages/assets/manifest.json`, which cannot work here: at this point the manifest is not yet committed, so there is nothing in the index to restore from.
 
 - [ ] **Step 6: Confirm the raw inputs never entered history, and drop the throwaway probes**
 
@@ -2668,7 +2669,7 @@ Remove-Item -Recurse -Force .probe
 - [ ] **Step 7: Commit**
 
 ```bash
-git add packages/assets
+git add packages/assets .gitignore pnpm-lock.yaml
 git commit -m "feat(assets): transcode the corpus to H.264 with a passing QC gate"
 ```
 
