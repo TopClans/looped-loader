@@ -10,5 +10,5 @@
     "typecheck": "pnpm -r typecheck",
     "transcode": "pnpm --filter @topclans/looped-loader-tools build && node tools/transcode/dist/index.js"
   },
-  "devDependencies": { "typescript": "~5.9.3" }
+  "devDependencies": { "typescript": "~7.0.2" }
 }
