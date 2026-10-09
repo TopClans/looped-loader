@@ -46,14 +46,20 @@ workspace root.
 ```powershell
 cd C:\dsh\looped-loader
 git status --short                  # expect clean
-git log --oneline -3                # expect the build plan's last commit
+git log --oneline -3                # expect df65247 or later
 pnpm install
-pnpm -r build; pnpm -r test; pnpm typecheck    # the baseline from the build plan must be green first
+pnpm build; pnpm typecheck; pnpm test    # the baseline must be green before Task 1 starts
 ```
 
-This plan assumes the build plan is **finished**: all twelve of its tasks are `done` in
-`docs/epic/PROGRESS.md`, `pnpm -r test` is green, and the assets exist. If they are not,
-stop — this plan's tasks verify claims about code that must already exist.
+This plan assumes the build plan is **finished**: Tasks 1–11 are `done` in
+`docs/epic/PROGRESS.md`, `pnpm test` is green, and the assets exist. Task 12 is the exception
+and is not a blocker — this plan's Task 9 replaces its publish step and Task 8 owns its flip.
+If Tasks 1–11 are not done, stop: every task here verifies claims about code that must already
+exist.
+
+Note the order of the baseline command: `pnpm build` before `pnpm typecheck`, and the root
+`pnpm build`, not `pnpm -r build` — see the rulings above. A fresh clone has no
+`packages/core/dist`, and two packages resolve the core through it.
 
 Permission mode: Tasks 1–7 write only inside the workspace and run under `workspace-write`.
 **Tasks 8, 9 and 10 do not** — `gh api` writes to the GitHub API, `npm trust` and
@@ -63,6 +69,23 @@ Run those in a `danger-full-access` session, or hand the exact commands to the o
 Worktrees: this plan's tasks are mostly document and configuration edits with small,
 disjoint write scopes. Follow `docs/epic/RUNBOOK.md` §3 — one writer per worktree, and the
 write scopes listed per task are the contract.
+
+**Wave schedule.** The dependency graph is not the binding constraint here — the write scopes
+are. Five tasks edit the root `package.json` (T1, T2, T3, T5, and T4 if a script is needed),
+three edit `.github/workflows/ci.yml` and three touch `pnpm-lock.yaml` (T1, T3, T5), so at most
+two writers can run at once:
+
+| Wave | Tasks | Why this grouping |
+|---|---|---|
+| 1 | T1 | owns the root `package.json`, `ci.yml`, the package manifests and the lockfile |
+| 2 | T2 ∥ T6 | **T6 runs in the main checkout**, not a worktree — it needs the untracked `gifs/` |
+| 3 | T3 ∥ T4 | T3 consumes T2's `scripts/check-links.mjs`; T4 and T6 share `packages/core/test/`, so they must not overlap |
+| 4 | T5 ∥ T7 | this wave lands through a pull request on purpose: the PR template and the six-leg matrix exist by now |
+| 5 | T8 | main session; the flip is owner-gated |
+| 6 | T9 | main session; the dry run runs before any tag |
+| 7 | E5.2 + T10 | main session; the tag, then verification from outside |
+
+Critical path: T1 → T2 → T3 → T8 → T9 → tag → T10. T4, T5, T6 and T7 hang off it.
 
 ### Decisions and rulings
 
@@ -88,6 +111,63 @@ Settled here; the executor does not reopen them. Numbering continues the tracker
   existing package. Resolve this at the start of Task 9 with `npm trust … --dry-run` and
   record the answer in the task before tagging anything.
 
+Rulings from the audit of 2026-10-09 (see the next section for what it found):
+
+- **`pnpm build` — the root script, never `pnpm -r build` — precedes `pnpm typecheck` in every
+  workflow.** The root script is `sync-legal.mjs && pnpm -r build && check-size.mjs`; the
+  recursive form both loses the bundle-budget gate and, in a fresh clone, leaves
+  `packages/core/dist` absent so typecheck fails with TS2307.
+- **Task 6 runs in the main checkout, not a worktree**, because `gifs/` is untracked and its
+  Step 7 re-runs the pipeline over it. Its wave-mate works in a worktree, so one writer per
+  directory still holds.
+- **`CONTRIBUTING.md` points at `docs/epic/stories/E4.3-clip-policy.md` until Task 7 creates
+  `docs/content-policy.md`**, and Task 7 switches the link. Otherwise `pnpm test` is red for
+  two waves for a reason that looks like a broken repository.
+- **The `0.1.0` changelog entry and the version freeze live in Task 9 Step 7.** The build plan's
+  Task 12 used to write them; this plan replaces that task's publish step, so the entry moves
+  here rather than disappearing.
+- **The tag push is an explicit, owner-gated step** (Task 9 Step 9), not an implied consequence
+  of the commit before it.
+- **Coverage is measured only in the three packages that have a vitest config**, because
+  `pnpm -r test --coverage` appends `--coverage` to the demo's `node -e` script and fails it.
+- **`tarball-inventory.json` is written by `scripts/check-tarballs.mjs` and uploaded as the
+  release run's artifact**, which is what E5.1's story asks for and what `.gitignore` already
+  anticipated.
+
+### Plan audit (2026-10-09)
+
+The audit described in
+`docs/superpowers/specs/2026-10-09-looped-loader-step-2-oss-release-design.md` §4 was run on
+2026-10-09, before any wave was dispatched, because this plan was written before the files it
+edits existed. Each finding below was observed, not reasoned about; the ones that were probed by
+running the plan's own scripts say so.
+
+| # | Where | What was wrong | Evidence | Correction |
+|---|---|---|---|---|
+| A1 | Task 1 Step 5 | The metadata block omits `engines`, which `scripts/check-manifests.mjs` requires on all three packages | ran the plan's own check against the repository: `@topclans/looped-loader-vue: missing "engines"`, same for assets | `"engines": { "node": ">=20.11" }` added to the block |
+| A2 | Task 1 Step 2/7 | No `.prettierignore` exists, so `prettier --write .` reformats `dist/`, the docs — including this plan — and both specs, and `format:check` then fails on any built workspace | `.prettierignore` absent; `packages/core/dist` and `packages/vue/dist` present | `.prettierignore` added and committed |
+| A3 | Task 3 Step 4 | The matrix replaced `pnpm build` with `pnpm -r build` and kept `typecheck` first | current `ci.yml` runs `pnpm build`; `df65247` documents the TS2307 failure | `pnpm build` then `pnpm typecheck`, with the reason in the workflow |
+| A4 | Task 3 Step 4 | `pnpm -r test --coverage` fails the demo package | `node -e "console.log('…')" --coverage` → `bad option: --coverage`, exit 9 | the script filters the three vitest packages |
+| A5 | Task 3 Step 3 | The ffmpeg guard was placed inside `describe.skipIf(!available)`, where it is skipped exactly when it matters | `tools/transcode/test/pipeline.test.ts:15` | moved to its own, non-skipped `describe` |
+| A6 | Task 3 Step 2 | `coverage.include: ['src/**/*.ts']` excludes the Vue component from the Vue package's own coverage | `packages/vue/src/LoopedLoader.vue` is the package's largest source file | widened to `src/**/*.{ts,vue}` |
+| A7 | Task 4 Step 2 | The README props-table regex captured nothing, so the test could never pass | README uses `### Props` (line 93) followed by a blank line; `## Props[\s\S]*?\n\n` stops there | section extracted to the next heading |
+| A8 | Task 5 Step 1 | `scripts/a11y-audit.mjs` imports `vite` at the repository root, where it is not a dependency | `node_modules/vite` does not exist; `vite` is a devDependency of `packages/vue` and `packages/demo` only | `vite@^8.3.3` added to the root devDependencies |
+| A9 | Task 6 Step 4 | The snippet omitted the `readProvenance` import and never showed how `provenance` reaches the entry | `tools/transcode/src/index.ts` builds `entries.push({…})` and `buildManifest` maps `ClipEntry` | import, `entries.push`, `ClipEntry` and `buildManifest` all stated as exact edits |
+| A10 | Task 6 Step 5 | Three bare `invalid(...)` calls that never throw | `invalid` is a factory (D-18); all 13 existing sites in `packages/core/src/manifest.ts` read `throw invalid(...)` | `throw` added at all three |
+| A11 | Task 9 Step 2 | The release workflow runs `pnpm -r build`, which skips `sync-legal.mjs` — so the gitignored `LICENSE` files never exist and `check-tarballs.mjs` fails on every tarball, after the version is frozen | `.gitignore` ignores `packages/*/LICENSE`; only the root `build` script runs `sync-legal.mjs` | the workflow runs `pnpm build` |
+| A12 | Task 9 Step 2 | `typecheck` before `build`, the same defect as A3 | run `37827667850` | build first |
+| A13 | Task 9 Step 3 | `check-tarballs.mjs` cannot spawn `npm` on Windows, and imported an unused `readdirSync` that `pnpm lint` rejects | `execFileSync('npm')` → `ENOENT`; `execFileSync('npm.cmd')` → `EINVAL`; `no-unused-vars` is an error in this repo | `execSync`, and the import removed |
+| A14 | Task 9 | The tarball inventory was never written or uploaded, although E5.1's story and `.gitignore` both require it | `.gitignore` line 41 names `tarball-inventory.json` and `check-tarballs.mjs --out` | `--out` support plus an `actions/upload-artifact` step |
+| A15 | Task 8 | Protection and the security features ran before the flip, which is impossible while private | `gh api …/branches/main/protection` → `403 Upgrade to GitHub Pro or make this repository public` | order corrected to metadata → flip → protection → security → verify (D-29) |
+| A16 | Task 8 Step 4 | The required-check list covers 2 of the 6 matrix legs while E3.5's acceptance says six | `contexts` names only Node 22 | made an explicit decision to record, not an oversight |
+| A17 | Task 9 / build Task 12 | Nothing owned the `0.1.0` changelog entry once Task 12's publish step was superseded | Task 2 creates `CHANGELOG.md` with no released entry | Task 9 Step 7 writes it and freezes the version |
+| A18 | Task 2 Step 1 | The expectation "it reports links in `docs/epic/` that do not exist yet" was false | ran the plan's own `check-links.mjs`: `relative links ok`, exit 0 | the check is now proved by a deliberate break |
+| A19 | "Verified facts" | Community profile 14 %, "no licence detected", npm scope unverified | re-measured: 42 %, MIT detected, `@topclans` owned by `topclans` | section rewritten from the 2026-10-09 measurements |
+
+Two more corrections landed outside this plan: the build plan's Task 12 no longer publishes from
+this machine and no longer flips the repository (OSS Task 9 and Task 8 own those), and the wave
+schedule in the design spec §6.2 places Task 6 in the main checkout.
+
 ### Verified facts
 
 Measured 2026-10-08 on `WIN-TTEB79J8UHA`, Windows 11, and from npm's own documentation.
@@ -107,13 +187,42 @@ Measured 2026-10-08 on `WIN-TTEB79J8UHA`, Windows 11, and from npm's own documen
   `NPM_TOKEN`, and provenance is then generated automatically.
 - **A new trusted-publisher configuration expires after 2 days** if its first publish does
   not succeed.
-- **GitHub community profile health for this repository is 14 %** — README, CONTRIBUTING,
-  CODE_OF_CONDUCT, SECURITY, issue templates, PR template and licence are all missing
-  (`gh api repos/TopClans/looped-loader/community/profile`).
-- Repository topics are unset, homepage is empty, no licence is detected, issues are
-  enabled, visibility is `private`.
-- `gh` is authenticated as `TopClans` with the `repo` scope, which is enough for repository
-  settings, branch protection and visibility changes.
+- **Re-measured 2026-10-09, after the build plan landed.** The design-time entries below were
+  taken before the code, the README and the licence existed; where the two disagree, this list
+  wins. The verification pass that produced it is recorded in
+  `docs/superpowers/specs/2026-10-09-looped-loader-step-2-oss-release-design.md` §3.
+- **GitHub community profile health is 42 %** (`gh api …/community/profile`): README and the
+  MIT licence are present; `contributing`, `code_of_conduct`, `issue_template` and
+  `pull_request_template` are `null`. The design-time 14 % predates the README.
+- Repository: `visibility: private`, `default_branch: main`, topics `[]`, homepage `null`,
+  licence detected as MIT, issues enabled.
+- **Branch protection does not exist while the repository is private.** `gh api
+  repos/TopClans/looped-loader/branches/main/protection` answers `403 Upgrade to GitHub Pro or
+  make this repository public to enable this feature`. This is why Task 8 now flips before it
+  protects, and why its security features also come after the flip — CodeQL and secret scanning
+  are free only on public repositories.
+- `gh` is authenticated as `TopClans` with the scopes `gist`, `read:org`, `repo`, `workflow` —
+  enough for repository metadata and branch protection. It does **not** carry
+  `security_events`, so CodeQL's default setup needs either `gh auth refresh` or the web UI
+  (Task 8 requires the route to be recorded); it does not carry `admin:org`, so the
+  organization's plan cannot be read through the API.
+- **The local npm CLI has no session**: `npm whoami` → `ENEEDAUTH`, and `npm trust list
+  @topclans/looped-loader-core` → `401`. Writing is provably impossible without the owner's
+  `npm login`, which is a gate in Task 9 rather than a formality.
+- **The npm org `@topclans` exists and `topclans` is its owner**: `npm org ls topclans` →
+  `{"topclans":"owner"}`, and the endpoint is authoritative — a nonexistent scope returns
+  `E404 Scope not found`. TD-3 is closed, and the design-time fallback to unscoped package
+  names is not needed.
+- **`npm trust github` accepts an unpublished package name in `--dry-run`** — but the probe ran
+  without a session, so it may never have reached the registry. The question stays open: Task 9
+  Step 1 answers it with the owner authenticated, before anything is tagged.
+- **The tool pins resolve**: eslint 10.12.0, @eslint/js 10.0.1, typescript-eslint 8.71.1,
+  eslint-plugin-vue 10.11.1, vue-eslint-parser 10.4.1, eslint-config-prettier 10.1.8, prettier
+  3.9.9, @commitlint/cli 21.2.3, @commitlint/config-conventional 21.2.3, playwright 1.64.0,
+  @axe-core/playwright 4.13.0 (`npm view <pkg> version`, 2026-10-09).
+- **`execFileSync('npm', …)` cannot work on Windows**: `npm` → `ENOENT`, `npm.cmd` → `EINVAL`;
+  a shell is required. Task 9's tarball check uses `execSync` for that reason.
+- `main` = `origin/main` = `df65247`, working tree clean, CI green (run `37828155212`).
 - Node **can** capture child-process stdout in this environment; the scripts in this plan
   rely on it.
 
@@ -150,14 +259,24 @@ Classes, not model names — the owner names the models before each wave.
 
 ### State at handoff
 
-- Branch `main`, with the spec, the build plan, the epic, the runbook, the tracker and the
-  eleven story files committed; `feat/looped-loader` carries the implementation once the
-  build plan has run.
-- `docs/epic/PROGRESS.md` is the status carrier. All stories are `todo` at handoff.
-- Repository: private, `TopClans/looped-loader`, community profile 14 %, no topics, no
-  homepage, no detected licence.
-- Nothing in this plan has been implemented: no lint config, no community files, no CI
-  matrix, no release workflow.
+- Updated 2026-10-09. Branch `main` = `origin/main` = `df65247`, working tree clean, CI green
+  (run `37828155212`); build plan Tasks 1–11 are merged, Task 12 is not started and is
+  superseded in part by Tasks 8 and 9 here.
+- The design this plan now implements is
+  `docs/superpowers/specs/2026-10-09-looped-loader-step-2-oss-release-design.md`; the product
+  spec is unchanged.
+- The audit of §"Plan audit (2026-10-09)" has been run and its nineteen corrections are applied
+  in this file. Rulings taken with it are in "Decisions and rulings".
+- `docs/epic/PROGRESS.md` is the status carrier: E4.1–E4.5, E3.3–E3.5, E2.4, E5.1 and E5.3 are
+  `todo`; E4.5 is deferred by the owner's decision of 2026-10-09 (D-27) and Task 11 is not part
+  of this run.
+- Repository: private, `TopClans/looped-loader`, community profile 42 %, no topics, no
+  homepage, MIT licence detected, branch protection unavailable until it is public.
+- Nothing in this plan has been implemented: no lint config, no community files, no CI matrix,
+  no a11y audit, no provenance, no release workflow.
+- Owner actions already verified as *not* done, and gating Tasks 8, 9 and E5.2: the npm session
+  (`npm whoami` → `ENEEDAUTH`) and the contact-sheet review (criterion 9 of the build plan,
+  open).
 
 ## Review Focus
 
@@ -184,7 +303,7 @@ bite a real consumer or contributor first. Each has a test in its owning task.
 ## Task 1: Repo hygiene and package metadata (E4.1)
 
 **Files:**
-- Create: `.editorconfig`, `prettier.config.mjs`, `eslint.config.mjs`, `commitlint.config.mjs`, `.nvmrc`, `scripts/check-manifests.mjs`
+- Create: `.editorconfig`, `.prettierignore`, `prettier.config.mjs`, `eslint.config.mjs`, `commitlint.config.mjs`, `.nvmrc`, `scripts/check-manifests.mjs`
 - Modify: `package.json` (root: scripts and devDependencies), `.github/workflows/ci.yml` (lint and commitlint jobs), `packages/core/package.json`, `packages/vue/package.json`, `packages/assets/package.json`
 
 **Interfaces:**
@@ -276,6 +395,37 @@ export default { extends: ['@commitlint/config-conventional'] }
 22
 ```
 
+`.prettierignore`:
+
+```
+# Build output and generated artefacts: reformatting these either breaks the build or
+# makes `format:check` fail after every rebuild.
+**/dist/
+coverage/
+packages/assets/clips/
+packages/demo/public/
+packages/*/LICENSE
+packages/assets/NOTICE
+
+# Documents are written by hand and by agents, not by a formatter. Without this line
+# `prettier --write .` rewrites the plans, the specs and the tracker — including the plan
+# the executor is reading, which is how the diff of this task turns into a 3000-line review.
+docs/
+README.md
+NOTICE
+
+# Lockfile and binaries
+pnpm-lock.yaml
+*.png
+```
+
+**Why this file is not cosmetic.** Measured on 2026-10-09: there is no `.prettierignore` in
+the repository, `packages/core/dist` and `packages/vue/dist` exist in the working tree, and
+`prettier --write .` formats everything it can parse — so Step 7 would rewrite built bundles,
+the 1596-line plan, both specs, `PROGRESS.md` and the wave log, and CI's `format:check` would
+then fail on any machine that has built the workspace. The ignore list is what keeps the
+formatter pointed at sources.
+
 Add to the root `package.json` scripts:
 
 ```json
@@ -355,7 +505,14 @@ Add to each of the three published `package.json` files, adjusting only `descrip
   "bugs": { "url": "https://github.com/TopClans/looped-loader/issues" },
   "author": "TopClans",
   "keywords": ["loader", "spinner", "vue", "looping", "video", "mp4"],
+  "engines": { "node": ">=20.11" },
 ```
+
+**`engines` is not optional here.** `scripts/check-manifests.mjs` requires it on all three
+published packages, and only `packages/core` has it today: running the plan's own check against
+the repository on 2026-10-09 reports `@topclans/looped-loader-vue: missing "engines"` and
+`@topclans/looped-loader-assets: missing "engines"` (plus `missing engines.node` for each).
+Step 6 cannot reach `package metadata ok: 3 packages` unless this line is added to both.
 
 - [ ] **Step 6: Run the check again, then prove it can fail**
 
@@ -417,7 +574,7 @@ Append to `.github/workflows/ci.yml`:
 - [ ] **Step 9: Commit**
 
 ```bash
-git add .editorconfig prettier.config.mjs eslint.config.mjs commitlint.config.mjs .nvmrc scripts package.json pnpm-lock.yaml .github packages/*/package.json
+git add .editorconfig .prettierignore prettier.config.mjs eslint.config.mjs commitlint.config.mjs .nvmrc scripts package.json pnpm-lock.yaml .github packages/*/package.json
 git commit -m "chore: lint, format, commit style and published package metadata"
 ```
 
@@ -484,7 +641,17 @@ console.log('relative links ok')
 
 Run: `node scripts/check-links.mjs`
 
-Expected: it reports the links in `docs/epic/` that point at files this task has not created yet — that is the check proving it walks the tree. Fix what it finds by creating the file or correcting the link; do not add an ignore list for a path that should exist.
+Expected: **`relative links ok`, exit 0 — and that is not a reason to doubt the script.**
+Measured on 2026-10-09 by running this script verbatim against the repository: every relative
+link in `README.md` and under `docs/` already resolves, so it passes on the first run. The
+design-time expectation that it would list missing files in `docs/epic/` was wrong — those
+story files all exist.
+
+The check therefore has to be *proved* rather than observed: temporarily point one link in
+`README.md` at `docs/content-policy.md` (which Task 7 creates, so it does not exist yet), run
+the script, confirm it names that file and exits 1, then revert the edit. A check that has
+never failed is not yet known to work. Fix anything it finds by creating the file or correcting
+the link; do not add an ignore list for a path that should exist.
 
 - [ ] **Step 2: Write the community files**
 
@@ -583,19 +750,30 @@ export default defineConfig({
 })
 ```
 
-The `vue` config keeps `environment: 'jsdom'` and its `@vitejs/plugin-vue` plugin.
+The `vue` config keeps `environment: 'jsdom'` and its `@vitejs/plugin-vue` plugin, and widens
+`coverage.include` to `['src/**/*.{ts,vue}']`. With `src/**/*.ts` alone the component — the
+largest source file in that package — is excluded from the measurement, so the threshold would
+describe the composables and call it the package's coverage.
 
 - [ ] **Step 3: Make the Windows leg fail if ffmpeg is missing**
 
-In `tools/transcode/test/pipeline.test.ts`, add inside the existing `describe.skipIf(!available)` block — or beside it — this guard, so a matrix leg cannot pass by skipping the integration tests:
+In `tools/transcode/test/pipeline.test.ts`, add this guard in its **own** `describe` block,
+outside the existing `describe.skipIf(!available)('transcode pipeline', …)`:
 
 ```ts
-it('has ffmpeg available in CI', () => {
-  if (process.env.CI === 'true') {
-    expect(available, 'CI must install ffmpeg; the integration tests must not silently skip').toBe(true)
-  }
+describe('ffmpeg availability', () => {
+  it('is present in CI, where the integration tests must not silently skip', () => {
+    if (process.env.CI === 'true') {
+      expect(available, 'CI must install ffmpeg; the integration tests must not silently skip').toBe(true)
+    }
+  })
 })
 ```
+
+**Inside the skipped block this guard would be dead code, which is the exact case it exists
+for.** `describe.skipIf(!available)` skips every test in the block when ffmpeg is absent — so
+a guard placed there never runs on the one leg it was written to catch, and that leg passes by
+skipping. It must live outside.
 
 - [ ] **Step 4: Extend the workflow with the matrix**
 
@@ -629,8 +807,16 @@ Replace the single `test` job in `.github/workflows/ci.yml` with:
           choco install ffmpeg -y --no-progress
           ffmpeg -version | Select-Object -First 1
       - run: pnpm install --frozen-lockfile
+      # The ROOT `pnpm build`, not `pnpm -r build`, and before typecheck. Two measured reasons:
+      #  1. a fresh clone has no `packages/core/dist`; packages/vue and packages/demo resolve
+      #     @topclans/looped-loader-core through those emitted declarations, so type-checking
+      #     first fails with TS2307 plus a cascade of TS7006. That is how the first push of
+      #     `main` went red, and it is fixed in df65247.
+      #  2. the root script is `sync-legal.mjs && pnpm -r build && check-size.mjs`. Using
+      #     `pnpm -r build` here would silently drop the bundle-budget gate from CI, which is
+      #     an acceptance line of E1.1.
+      - run: pnpm build
       - run: pnpm typecheck
-      - run: pnpm -r build
       - name: Tests with coverage
         if: matrix.os == 'ubuntu-latest' && matrix.node == 22
         run: pnpm test:coverage
@@ -650,8 +836,21 @@ concurrency:
 And the root script:
 
 ```json
-    "test:coverage": "pnpm -r test --coverage && node scripts/check-manifests.mjs && node scripts/check-links.mjs"
+    "test:coverage": "pnpm --filter @topclans/looped-loader-core --filter @topclans/looped-loader-vue --filter @topclans/looped-loader-tools test --coverage && node scripts/check-manifests.mjs && node scripts/check-links.mjs"
 ```
+
+**The three filters are required, not stylistic.** `pnpm -r test --coverage` appends
+`--coverage` to *every* package's `test` script, and two of them are not vitest: the demo's is
+`node -e "console.log(...)"` and the assets package's is `node scripts/verify.mjs`. Measured on
+2026-10-09:
+
+```
+node -e "console.log('demo no-op test')" --coverage
+C:\nvm4w\nodejs\node.exe: bad option: --coverage
+exit=9
+```
+
+Coverage runs in the three packages that have a vitest config, and nowhere else.
 
 Coverage runs on one leg only: it is the slowest step and the number does not change with the operating system or the Node minor.
 
@@ -771,8 +970,14 @@ describe('README props table', () => {
       .sort()
 
     const readme = readFileSync(join(repoRoot, 'README.md'), 'utf8')
-    const table = /## Props[\s\S]*?\n\n/.exec(readme)?.[0] ?? ''
-    const documented = [...table.matchAll(/^\|\s*`([a-zA-Z][a-zA-Z0-9]*)`/gm)]
+    // The README's heading is `### Props` (line 93) and the next heading is `### Events`
+    // (line 111). The design-time regex `/## Props[\s\S]*?\n\n/` matched the substring
+    // "## Props" *inside* "### Props" and then stopped at the blank line directly after the
+    // heading, so the captured section held no table rows, `documented` was always `[]`, and
+    // `expect(documented).toEqual(declared)` could never pass. Verified 2026-10-09 against the
+    // committed README.
+    const section = /^#{2,3} Props$([\s\S]*?)^#{1,3} /m.exec(readme)?.[1] ?? ''
+    const documented = [...section.matchAll(/^\|\s*`([a-zA-Z][a-zA-Z0-9]*)`/gm)]
       .map((match) => match[1] as string)
       .sort()
 
@@ -827,9 +1032,16 @@ git commit -m "test: lock the public API surface, types and README props table"
 - [ ] **Step 1: Install the audit tooling**
 
 ```powershell
-pnpm add -D -w playwright@^1.64 @axe-core/playwright@^4.13
+pnpm add -D -w playwright@^1.64 @axe-core/playwright@^4.13 vite@^8.3.3
 pnpm exec playwright install --with-deps chromium
 ```
+
+**`vite` is added to the root on purpose.** The script below does `import { preview } from
+'vite'` and lives in `scripts/` at the repository root, so Node resolves it from the root
+`node_modules` — where `vite` is absent today (measured 2026-10-09: `node_modules/vite` does
+not exist; `vite` is a devDependency of `packages/vue` and `packages/demo` only, and pnpm does
+not hoist it to the root). Without this line `pnpm a11y` dies with `ERR_MODULE_NOT_FOUND`
+before it reaches a browser.
 
 The audit runs in a **real browser**, not jsdom. axe in jsdom cannot see computed styles or the accessibility tree, which is exactly where this component's risks live.
 
@@ -947,6 +1159,12 @@ git commit -m "test(a11y): axe audit in a real browser, with the guarantees writ
 - Create: `tools/transcode/src/provenance.ts`, `packages/assets/provenance-exceptions.json`
 - Modify: `tools/transcode/src/manifest.ts`, `tools/transcode/src/index.ts`, `tools/transcode/src/qc.ts`, `packages/core/src/manifest.ts`, `packages/assets/scripts/verify.mjs`, tests in `tools/transcode/test/` and `packages/core/test/`
 
+**Run this task in the main checkout, not in a worktree.** Step 7 re-runs the pipeline over
+`gifs/`, which is untracked and therefore absent from every fresh worktree, and it rewrites the
+committed `packages/assets/manifest.json` in place. Build-plan Task 6 had the same constraint
+for the same reason (D-17). Its wave-mate works in its own worktree, so the one-writer-per-
+directory rule still holds: this task owns the main checkout for the duration.
+
 **Interfaces:**
 - Consumes: build-plan Tasks 4–6 (the pipeline and the assets).
 - Produces: `Provenance`, `readProvenance`, `DEFAULT_PROVENANCE`, a `provenance` block in every manifest clip, and the assets check E4.3's policy depends on.
@@ -1032,24 +1250,46 @@ export function readProvenance(gifsDir: string, id: string): { provenance: Prove
 
 - [ ] **Step 4: Carry it into the manifest and the report**
 
-In `tools/transcode/src/manifest.ts`, add `provenance` to each clip entry and to `ClipEntry`.
-In `tools/transcode/src/index.ts`, read the sidecar per clip and add a **review** finding
-when the licence is `unverified`:
+Three edits, in this order. The snippet in the first one is the whole change; the other two are
+stated as exact edits because the surrounding code already exists.
+
+1. `tools/transcode/src/index.ts` — import the new module beside the existing imports
+   (`import { buildManifest, sha256File, type ClipEntry } from './manifest.js'` is the line it
+   goes next to):
 
 ```ts
-    const { provenance, fromSidecar } = readProvenance(gifsDir, id)
-    if (!fromSidecar) {
-      findings.push({
-        id,
-        level: 'review',
-        code: 'license-unverified',
-        message: 'no provenance sidecar: published with license "unverified"',
-      })
-    }
+import { readProvenance } from './provenance.js'
 ```
 
-Add a `## Provenance` section to the generated `qc-report.md` that groups clips by licence
-value, so the count of `unverified` clips is visible on every run.
+   Then, inside the per-clip loop (`for (const name of selected.sort())`, right after
+   `const id = basename(name, '.mp4')`), read the sidecar:
+
+```ts
+      const { provenance, fromSidecar } = readProvenance(gifsDir, id)
+      if (!fromSidecar) {
+        findings.push({
+          id,
+          level: 'review',
+          code: 'license-unverified',
+          message: 'no provenance sidecar: published with license "unverified"',
+        })
+      }
+```
+
+   and add `provenance,` to the object the loop pushes into `entries` (currently `{ id,
+   sourcePath, outputPath, plan, width, height, durationMs, fps, frames, bytes }`).
+
+2. `tools/transcode/src/manifest.ts` — add `provenance: Provenance` to the `ClipEntry`
+   interface, and copy it into the clip the `entries.map` in `buildManifest` returns:
+
+```ts
+        provenance: entry.provenance,
+```
+
+3. `tools/transcode/src/index.ts` — add a `## Provenance` section to the generated
+   `qc-report.md`, grouping clips by licence value so the count of `unverified` clips is
+   visible on every run. The report is assembled in the lines-array at the end of `main()`;
+   add the section before the `writeFileSync(join(outDir, 'qc-report.md'), lines.join('\n'))`.
 
 - [ ] **Step 5: Validate the shape in the core, without rejecting the unknown**
 
@@ -1058,18 +1298,26 @@ In `packages/core/src/manifest.ts`, inside `parseClip`, after the existing field
 ```ts
   if (raw.provenance !== undefined) {
     if (typeof raw.provenance !== 'object' || raw.provenance === null) {
-      invalid(`clip "${id}" has a malformed provenance block`)
+      throw invalid(`clip "${id}" has a malformed provenance block`)
     }
     const provenance = raw.provenance as Record<string, unknown>
     if (typeof provenance.source !== 'string' || provenance.source === '') {
-      invalid(`clip "${id}" provenance has no source`)
+      throw invalid(`clip "${id}" provenance has no source`)
     }
     if (typeof provenance.license !== 'string' || provenance.license === '') {
-      invalid(`clip "${id}" provenance has no license`)
+      throw invalid(`clip "${id}" provenance has no license`)
     }
     clip.provenance = { source: provenance.source, license: provenance.license }
   }
 ```
+
+**All three calls need `throw`.** `invalid` is a factory that *returns* a `LoopedLoaderError`;
+a bare `invalid(...)` is a statement that evaluates an error and discards it. This is D-18
+exactly — the same defect carried thirteen non-throwing sites into the build plan, where the
+plan's own tests then failed 12/12. Every one of the thirteen sites already in
+`packages/core/src/manifest.ts` reads `throw invalid(...)`, and without the `throw` the three
+guards above also stop narrowing their types, so the assignment on the last line fails
+`pnpm typecheck` as well as failing at runtime.
 
 Add `provenance?: { source: string; license: string; sourceUrl?: string }` to the `Clip`
 interface in `packages/core/src/pool.ts`. Unknown top-level fields stay ignored — that is
@@ -1183,7 +1431,7 @@ git commit -m "docs: clip contribution policy and the content boundary it enforc
 - Consumes: Tasks 1–3 (the checks that become required status checks) and Task 2 (the community files).
 - Produces: a public repository with protected settings, which Task 9 requires for provenance.
 
-**Owner-gated.** Do not run Step 5 without an explicit instruction in the current conversation.
+**Owner-gated.** Do not run Step 3 without an explicit instruction in the current conversation.
 
 - [ ] **Step 1: Record the before state**
 
@@ -1203,7 +1451,33 @@ gh repo edit TopClans/looped-loader --description "A Vue loader that plays a per
 gh repo edit TopClans/looped-loader --add-topic vue,loader,spinner,video,mp4,looping,typescript,webm
 ```
 
-- [ ] **Step 3: Protect `main` and the release tags**
+- [ ] **Step 3: Flip the repository to public — owner-gated**
+
+**This step moved here from the end of the task, and the move is the point.** Branch protection
+does not exist on this repository while it is private. Measured on 2026-10-09:
+
+```
+gh api repos/TopClans/looped-loader/branches/main/protection
+-> 403 Upgrade to GitHub Pro or make this repository public to enable this feature
+```
+
+So the design-time order (protect → security features → flip) stops at its own second step and
+never reaches the flip at all.
+
+Before running this: the owner has reviewed the contact sheet (build-plan Task 10, criterion 9)
+and said so in the current conversation. This publishes 32 third-party clips and the whole
+working record — the incident journal in `PROGRESS.md`, both plans, both specs, the story files
+and the wave log. That is a decision, not a side effect.
+
+```powershell
+gh repo edit TopClans/looped-loader --visibility public --accept-visibility-change-consequences
+```
+
+Between this step and Step 4 the repository is public and `main` is unprotected. The window is
+minutes long, nothing is pushed during it, and it is accepted, because the alternative — being
+protected first — is impossible on this plan.
+
+- [ ] **Step 4: Protect `main` and the release tags**
 
 ```powershell
 gh api -X PUT repos/TopClans/looped-loader/branches/main/protection --input protection.json
@@ -1232,7 +1506,17 @@ an approval you cannot obtain alone makes the rule theatre. Read the exact check
 a real run before filling `contexts` — a required check whose name does not match any job
 blocks every pull request forever.
 
-- [ ] **Step 4: Turn on the security features and labels**
+**Decide deliberately which legs gate a merge.** The list above names Node 22 on both operating
+systems, so the Node 20 and Node 24 legs run without gating anything, while E3.5's acceptance
+line reads "six matrix legs green". Either add all six contexts (slower merges, stronger claim)
+or keep two and say in `docs/release.md` that the other four are advisory. Leaving it unstated
+means a reader of the acceptance map assumes six.
+
+- [ ] **Step 5: Turn on the security features and labels**
+
+These are free only on a public repository: on a private one, secret scanning and CodeQL's
+default setup are GitHub Advanced Security features and their endpoints answer 403 or 404. That
+is the second reason this step follows the flip rather than preceding it.
 
 ```powershell
 gh api -X PATCH repos/TopClans/looped-loader --input security.json
@@ -1260,15 +1544,6 @@ gh label create assets --color fbca04 --description "Clip set, pipeline or QC"
 gh label create release --color 0e8a16 --description "Versioning and publishing"
 ```
 
-- [ ] **Step 5: Flip the repository to public — owner-gated**
-
-Only after the owner has reviewed the contact sheet (build-plan Task 10) and said so in the
-current conversation.
-
-```powershell
-gh repo edit TopClans/looped-loader --visibility public --accept-visibility-change-consequences
-```
-
 - [ ] **Step 6: Re-run the checks that are cheap now and expensive later**
 
 ```powershell
@@ -1291,7 +1566,7 @@ git commit -m "docs: repository settings before and after going public"
 
 **Files:**
 - Create: `.github/workflows/release.yml`, `docs/release.md`
-- Modify: `CHANGELOG.md` (the `0.1.0` entry is written in build-plan Task 12)
+- Modify: `CHANGELOG.md` (the `0.1.0` entry is written in Step 7 of this task — the build plan's Task 12 no longer writes it), `packages/*/package.json` (version check only)
 
 **Interfaces:**
 - Consumes: Task 3's CI, Task 8's public repository, Task 1's `repository.url`.
@@ -1354,11 +1629,22 @@ jobs:
           registry-url: https://registry.npmjs.org
           package-manager-cache: false
       - run: pnpm install --frozen-lockfile
+      # The ROOT `pnpm build`, for the same TS2307 reason as the CI matrix and for one more
+      # that only this job has: the root script runs `scripts/sync-legal.mjs`, which writes
+      # packages/*/LICENSE and packages/assets/NOTICE — all four are gitignored, so a fresh CI
+      # clone has none of them. `pnpm -r build` skips sync-legal, `check-tarballs.mjs` then
+      # finds no LICENSE in any tarball, and the release fails after the version is frozen.
+      - run: pnpm build
       - run: pnpm typecheck
-      - run: pnpm -r build
       - run: pnpm test
-      - name: Inspect the tarballs
+      - name: Inspect the tarballs and write the inventory
         run: node scripts/check-tarballs.mjs
+      - name: Upload the tarball inventory
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarball-inventory
+          path: tarball-inventory.json
       - name: Publish (dry run)
         if: github.event_name == 'workflow_dispatch' && inputs.dry_run
         run: pnpm -r publish --access public --no-git-checks --dry-run
@@ -1377,8 +1663,8 @@ which is above the 11.5.1 trusted-publishing floor.
 print a list a human might skim:
 
 ```js
-import { execFileSync } from 'node:child_process'
-import { readdirSync } from 'node:fs'
+import { execSync } from 'node:child_process'
+import { writeFileSync } from 'node:fs'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -1386,10 +1672,20 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const packages = ['packages/core', 'packages/vue', 'packages/assets']
 const forbidden = [/^gifs\//, /^src\//, /^test\//, /\.probe\//]
 const problems = []
+const inventory = []
+
+const outIndex = process.argv.indexOf('--out')
+const outFile = outIndex === -1 ? join(root, 'tarball-inventory.json') : resolve(process.argv[outIndex + 1])
 
 for (const dir of packages) {
   const cwd = join(root, dir)
-  const output = execFileSync('npm', ['pack', '--dry-run', '--json'], { cwd, encoding: 'utf8' })
+  // `execSync`, not `execFileSync('npm', …)`: on Windows npm is a `.cmd` shim that Node refuses
+  // to spawn without a shell — measured on this machine on 2026-10-09:
+  //   execFileSync('npm', ['--version'])     -> ENOENT
+  //   execFileSync('npm.cmd', ['--version']) -> EINVAL
+  // A shell resolves `npm` on Linux and `npm.cmd` on Windows, so this is one code path, not a
+  // platform branch.
+  const output = execSync('npm pack --dry-run --json', { cwd, encoding: 'utf8' })
   const [{ files, filename }] = JSON.parse(output)
   const paths = files.map((file) => file.path)
 
@@ -1397,8 +1693,18 @@ for (const dir of packages) {
   for (const path of paths) {
     if (forbidden.some((pattern) => pattern.test(path))) problems.push(`${filename}: ships ${path}`)
   }
+  inventory.push({
+    package: dir,
+    filename,
+    bytes: files.reduce((total, file) => total + (file.size ?? 0), 0),
+    files: paths,
+  })
   console.log(`${filename}: ${paths.length} files`)
 }
+
+// The release workflow uploads this file as the run's artifact, so the inventory a reviewer
+// reads is the one the check actually judged. The path is already ignored by `.gitignore`.
+writeFileSync(outFile, `${JSON.stringify(inventory, null, 2)}\n`)
 
 if (problems.length > 0) {
   console.error(`tarball check failed:\n- ${problems.join('\n- ')}`)
@@ -1406,6 +1712,10 @@ if (problems.length > 0) {
 }
 console.log('tarballs ok')
 ```
+
+The previous version imported `readdirSync` and never used it, and `@typescript-eslint`'s
+`no-unused-vars` is an error in this repository's config — `pnpm lint` would have failed the
+same task that wrote the script. It is gone.
 
 Run it locally after `pnpm -r build`; `sync-legal.mjs` must have run first, which is why the
 root `build` script calls it.
@@ -1442,12 +1752,39 @@ three packages); the SemVer and deprecation policy (`deprecate`, never `unpublis
 do when a release is wrong; how to revoke and recreate a trusted publisher; and staged
 publishing documented as the next step if a second maintainer appears.
 
-- [ ] **Step 7: Commit**
+- [ ] **Step 7: Write the `0.1.0` entry and freeze the version**
+
+`CHANGELOG.md` is created in Task 2 with an `Unreleased` section and no released entry, and the
+build plan's Task 12 — which used to write this — has its publish step replaced by this task.
+So the entry belongs here, before the tag exists: the core, the Vue adapter, the 32 clips with
+the corpus total quoted from `packages/assets/qc-report.md`, and one line stating that the clip
+set is redistributed without a licence audit, linking `NOTICE`.
+
+Confirm all three published packages read `"version": "0.1.0"` and that `packages/vue/package.json`
+declares `@topclans/looped-loader-core` as `workspace:*`, which pnpm rewrites at publish time. A
+tag whose packages disagree on the version publishes a mismatched set that cannot be unpublished.
+
+- [ ] **Step 8: Commit**
 
 ```bash
-git add .github/workflows/release.yml scripts/check-tarballs.mjs docs/release.md
+git add .github/workflows/release.yml scripts/check-tarballs.mjs docs/release.md CHANGELOG.md
 git commit -m "ci: tag-triggered release with trusted publishing and no long-lived token"
 ```
+
+- [ ] **Step 9: Tag and watch — owner-gated and irreversible**
+
+The tag is the release. npm will not unpublish a version older than 72 hours, so a tag pushed
+against a workflow that was never rehearsed (Step 4) burns `0.1.0` permanently.
+
+```powershell
+git tag -a v0.1.0 -m "0.1.0"
+git push origin v0.1.0
+gh run watch
+```
+
+Expected: `release.yml` runs, publishes core → vue → assets in that order, and the run's log
+shows an attestation for each package. Record the run id, the three published versions and the
+attestation links in `docs/verification/<date>-release.md` (Task 10 owns that file).
 
 ## Task 10: Post-release verification (E5.3)
 
@@ -1524,6 +1861,11 @@ git commit -m "docs: post-release verification with quoted evidence"
 **Owner-gated. Do not start without an explicit instruction.** The accepted risk stands
 until the owner revisits it, and this task exists so the option is costed rather than
 imagined.
+
+**Deferred on 2026-10-09 (PROGRESS.md D-27).** The owner decided that `0.1.0` ships the current
+32 clips and that this task does not start now. It stays in this plan, and E4.5 stays `todo`
+rather than `dropped`, because the option remains real — including doing it before a later
+release. Nothing else in this plan depends on it.
 
 **Files:**
 - Create: `docs/verification/<date>-free-clip-set.md`, sidecar files under `gifs/`

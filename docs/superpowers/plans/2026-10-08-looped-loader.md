@@ -3806,16 +3806,17 @@ git commit -m "docs: usage, recipes, accessibility and the licensing boundary"
 
 ## Task 12: Release — dry runs, owner-gated publish, public flip
 
-> **Revised by the open-source plan.**
-> `docs/superpowers/plans/2026-10-08-looped-loader-oss-readiness.md` Task 9 replaces the
-> local publish below with a tag-triggered GitHub Actions release using npm trusted
-> publishing, which removes the long-lived npm token from the project entirely. Read that
-> task before running this one: if it is done, Steps 2–4 here collapse into "bump the
-> version in lockstep, push a `v0.1.0` tag, watch the workflow". The local path below stays
-> as the fallback for the case where trusted publishing turns out to require an
-> already-published package (that task's Step 1 resolves the question with `npm trust
-> --dry-run`). Going public is Task 8 of the open-source plan, and it must happen before a
-> release can carry provenance — npm does not generate it for private repositories.
+> **Revised by the open-source plan, 2026-10-09.**
+> `docs/superpowers/plans/2026-10-08-looped-loader-oss-readiness.md` replaces three parts of
+> this task: Task 9 owns the publish (a tag-triggered GitHub Actions release using npm trusted
+> publishing and no long-lived token), Task 8 owns the flip, and Task 9 Step 7 owns the `0.1.0`
+> changelog entry and the version freeze. What remains here is the owner precondition (Step 1),
+> the tarball inspection (Step 2, now automated as `scripts/check-tarballs.mjs`), the
+> outside-in verification pointer (Step 5) and the commit (Step 7). The local publish commands
+> are **gone rather than kept as a fallback**: if trusted publishing turns out to need an
+> already-published package, Task 9 Step 1 answers that question with the owner and decides the
+> shape of E5.2. Going public must happen before a release can carry provenance — npm does not
+> generate it for private repositories.
 
 **Files:**
 - Create: `CHANGELOG.md`
@@ -3829,20 +3830,25 @@ git commit -m "docs: usage, recipes, accessibility and the licensing boundary"
 
 Three things need the owner before anything is published:
 
-1. **npm authentication.** This machine is not logged in (`npm whoami` is empty) and the vault holds no npm token. Either the owner runs `npm login` in their own terminal, or they create an automation token, drop it in a file, and it is stored with the `secrets-vault` skill (`sec set`). The token is then used only inside a child process (`sec run`), never as a command argument.
-2. **Scope ownership.** `@topclans` must belong to the owner's npm account or an npm org they control. Confirm with `npm whoami` and `npm org ls topclans` once authenticated, or with `npm access list packages @topclans`. If it does not, fall back to unscoped `looped-loader-core`, `looped-loader-vue`, `looped-loader-assets` — a `package.json` rename in three files, no code change.
+1. **npm authentication.** Measured 2026-10-09: `npm whoami` → `ENEEDAUTH` and `npm trust list @topclans/looped-loader-core` → `401`, so this machine cannot publish or configure a trusted publisher at all. The owner runs `npm login` in their own terminal. **There is no token path**: trusted publishing over OIDC is the settled decision (PROGRESS.md D-11) and "no long-lived token anywhere" is an invariant of the release plan, so a vault-stored automation token is not an alternative here.
+2. **Scope ownership — settled, no action needed.** Measured 2026-10-09: `npm org ls topclans` → `{"topclans":"owner"}`, and the endpoint is authoritative (a nonexistent scope answers `E404 Scope not found`). The design-time fallback to unscoped package names is dead and must not be used.
 3. **The contact sheet review** from Task 10, plus a final look at the 32 clips before the repository becomes public.
 
 - [ ] **Step 2: Inspect the tarballs before anything leaves the machine**
 
 ```powershell
-pnpm -r build
-pnpm --filter @topclans/looped-loader-core exec npm pack --dry-run --json
-pnpm --filter @topclans/looped-loader-vue exec npm pack --dry-run --json
-pnpm --filter @topclans/looped-loader-assets exec npm pack --dry-run --json
+pnpm build
+node scripts/check-tarballs.mjs
 ```
 
-Expected for each: `core` and `vue` ship `dist` plus `LICENSE` — no `src`, no `test`, no `.probe`; `assets` ships `clips`, `manifest.json`, `checksums.json`, `LICENSE` and `NOTICE`, and **no** `gifs`. A tarball containing anything unexpected stops the release until it is explained, and a tarball *missing* `LICENSE` means `sync-legal.mjs` did not run — which is why `pnpm -r build` is the first command in this step.
+`pnpm build` — the ROOT script — is not interchangeable with `pnpm -r build` here. The root
+script runs `scripts/sync-legal.mjs`, which writes `packages/*/LICENSE` and
+`packages/assets/NOTICE`, and `.gitignore` keeps all four out of git. With `pnpm -r build` in a
+fresh clone those files do not exist, every tarball ships without its licence, and the check
+fails for a reason that reads like a packaging bug rather than a missing build step. Measured
+2026-10-09.
+
+Expected for each: `core` and `vue` ship `dist` plus `LICENSE` — no `src`, no `test`, no `.probe`; `assets` ships `clips`, `manifest.json`, `checksums.json`, `LICENSE` and `NOTICE`, and **no** `gifs`. A tarball containing anything unexpected stops the release until it is explained.
 
 - [ ] **Step 3: Write the changelog and freeze the version**
 
@@ -3850,15 +3856,19 @@ Expected for each: `core` and `vue` ship `dist` plus `LICENSE` — no `src`, no 
 
 Confirm all three published packages read `"version": "0.1.0"` and that `packages/vue/package.json` declares `@topclans/looped-loader-core` as `workspace:*`, which pnpm rewrites to the published version at publish time.
 
-- [ ] **Step 4: Publish in dependency order — owner-approved, irreversible**
+- [ ] **Step 4: Publish — replaced by the open-source plan; do not run the old commands**
 
-```powershell
-pnpm --filter @topclans/looped-loader-core publish --access public --no-git-checks
-pnpm --filter @topclans/looped-loader-vue publish --access public --no-git-checks
-pnpm --filter @topclans/looped-loader-assets publish --access public --no-git-checks
-```
+The commands that used to live here published from this machine, which contradicts D-11 and
+makes the registry's contents depend on a local `~/.npmrc`. The release is now:
 
-Stop if the owner has not answered Step 1. Stop if the tree is dirty and you were about to pass `--no-git-checks` to get past it — that flag is for a clean tree on a release branch, not for working around uncommitted work. Record the published version for each package.
+1. `docs/superpowers/plans/2026-10-08-looped-loader-oss-readiness.md` Task 9 Steps 1–8 — resolve
+   the trusted-publisher question with an authenticated `--dry-run`, rehearse the workflow, write
+   `docs/release.md`, write the `0.1.0` changelog entry and freeze the version.
+2. The same task's Step 9 — push the `v0.1.0` tag and watch `release.yml`.
+
+No local fallback is kept: if `npm trust` turns out to require an already-published package, that
+answer is recorded in Task 9 Step 1 and the shape of E5.2 is decided there with the owner, rather
+than by running publish commands from this checkout.
 
 - [ ] **Step 5: Verify from the outside, not from the repository**
 
@@ -3877,14 +3887,12 @@ Invoke-WebRequest -Method Head "https://cdn.jsdelivr.net/npm/@topclans/looped-lo
 
 Expected: HTTP 200 with a video content type. Only now does the README's CDN recipe stop being marked unverified — update that line in the same commit.
 
-- [ ] **Step 6: Flip the repository public — owner-approved**
+- [ ] **Step 6: Flip the repository public — owned by the open-source plan, not here**
 
-Only after Steps 1–5. Then re-run the two checks that were cheap and are now irreversible if wrong:
-
-```powershell
-git log --all -- gifs          # expect no output
-gh repo edit TopClans/looped-loader --visibility public --accept-visibility-change-consequences
-```
+The flip is `docs/superpowers/plans/2026-10-08-looped-loader-oss-readiness.md` Task 8 Step 3,
+which carries the same command plus the empty-`gifs` check and the owner's confirmation. It is
+written in both documents only to say the same thing twice; this one points at the other, so a
+reader cannot execute the flip from the older plan by mistake.
 
 - [ ] **Step 7: Commit**
 

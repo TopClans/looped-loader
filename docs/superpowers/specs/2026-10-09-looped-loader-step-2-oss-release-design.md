@@ -177,6 +177,11 @@ Two dependencies the epic does not show, both found in the file lists:
   creates.
 - **T3 and T6 both write inside `tools/transcode/test/`**, and **T4 and T6 both write inside
   `packages/core/test/`** — one writer per directory, so they must not overlap in time.
+- **T6 cannot run in a worktree at all**: its Step 7 re-runs the pipeline over `gifs/`, which is
+  untracked and therefore absent from every worktree, and it rewrites the committed
+  `packages/assets/manifest.json` in place. It runs in the **main checkout**, exactly as
+  build-plan Task 6 did (D-17), while its wave-mate runs in a worktree. *(Corrected by the
+  2026-10-09 audit: this section first placed both writers in worktrees.)*
 
 ### 6.2 Schedule
 
