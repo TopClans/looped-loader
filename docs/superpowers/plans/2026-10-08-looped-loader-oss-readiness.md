@@ -1600,22 +1600,51 @@ git commit -m "docs: repository settings before and after going public"
 
 - [ ] **Step 1: Resolve the one open question first**
 
-```powershell
-npm trust github @topclans/looped-loader-core --file release.yml --repo TopClans/looped-loader --allow-publish --dry-run
+> **Answered on 2026-10-09: `npm trust` requires an existing package.** Authenticated, the call
+> answered `404 Not Found` on the POST and on `list` while the package did not exist, and
+> succeeded once a placeholder `0.0.1` had reserved the name. The release therefore followed the
+> placeholder route: `0.0.1` under the `placeholder` dist-tag, deprecated; the trusted publisher
+> configured for all three; then `0.1.0` published by the tag workflow with OIDC and provenance.
+> The text below is kept as the record of how the question was framed before it was answered —
+> see `docs/release.md` → "The first publish, as it went" and
+> `docs/verification/2026-10-09-release.md`.
+
+**Answered by measurement on 2026-10-09, and the answer is "not from this session".** The
+`--dry-run` probe is green, but it never reaches the registry. The real call was made once the
+owner had logged in:
+
+```text
+$ npm trust github @topclans/looped-loader-core --file release.yml --repo TopClans/looped-loader --allow-publish
+Two-factor authentication is required for this operation
+npm error 403 403 Forbidden - POST https://registry.npmjs.org/-/package/@topclans%2flooped-loader-core/trust
+
+$ npm trust list @topclans/looped-loader-core
+npm error 403 403 Forbidden - GET https://registry.npmjs.org/-/package/@topclans%2flooped-loader-core/trust
 ```
 
-This needs npm authentication, so it may fail with `ENEEDAUTH` before answering anything.
-**The question it exists to answer:** does `npm trust` accept a package that has not been
-published yet? The npm documentation describes configuring a trusted publisher from the
-*package's* settings, which suggests the package must exist. Record the answer in this task
-and in `docs/release.md`, because it decides the shape of E5.2:
+Nothing was configured — `npm trust list` confirms it. **Two causes remain possible and cannot
+be separated without an owner-supplied one-time password:** the session created by `npm login`
+carries no 2FA approval for this operation, or npm refuses to attach a trusted publisher to a
+package that does not exist yet (its documentation describes configuring one from the package's
+*settings*).
 
-- If it accepts an unpublished name: configure all three, then tag, and `0.1.0` ships with
-  provenance.
-- If it requires an existing package: publish `0.1.0` once with a short-lived token the
-  owner creates and hands over through the vault, then configure trusted publishing and
-  ship `0.1.1` with provenance. `0.1.0` will have no attestation — say so in the release
-  notes rather than hiding it.
+So the branch taken is decided by the owner's own attempt, run with their 2FA:
+
+```powershell
+npm trust github @topclans/looped-loader-core   --file release.yml --repo TopClans/looped-loader --allow-publish
+npm trust github @topclans/looped-loader-vue    --file release.yml --repo TopClans/looped-loader --allow-publish
+npm trust github @topclans/looped-loader-assets --file release.yml --repo TopClans/looped-loader --allow-publish
+npm trust list @topclans/looped-loader-core
+```
+
+- **If those succeed:** the two-day window starts immediately — tag and publish in the same
+  sitting, because a configuration whose first publish fails expires and must be recreated.
+  `0.1.0` then ships with provenance.
+- **If they fail with `403` again:** the package must exist first. Publish `0.1.0` once with a
+  short-lived token the owner creates and hands over through the vault (`sec set … -FromFile`,
+  never in chat and never as a command argument), then configure trusted publishing for `0.1.1`.
+  `0.1.0` will carry **no attestation** — the release notes must say so rather than hide it, and
+  E5.1's acceptance line then reads "provenance from `0.1.1` onward".
 
 - [ ] **Step 2: Write the workflow**
 

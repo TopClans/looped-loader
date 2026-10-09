@@ -62,7 +62,7 @@ jobs:
         # of *what* it rejected. An artifact that only exists on the happy path is useless
         # exactly when it is needed.
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tarball-inventory
           path: tarball-inventory.json

@@ -84,9 +84,12 @@ level and the clips under `clips/`, exactly like the self-hosted layout. This
 recipe hands your runtime traffic to a third party (jsDelivr) on every page
 load, which is why self-hosting is the default.
 
-> **Unverified.** The packages are not published to npm yet, so this recipe
-> cannot be executed before the first publish. It is documented as written and
-> must be verified right after the release that publishes `0.1.0`.
+> **Verified against `0.1.0` on 2026-10-09.** jsDelivr serves both the manifest and a real clip
+> for the pinned version: `HEAD` on
+> `https://cdn.jsdelivr.net/npm/@topclans/looped-loader-assets@0.1.0/manifest.json` and on
+> `…/clips/0AMt9sYf-yB1Zu0Px8rtIMFvx3fzgltIaaQ5nIz0CA4.mp4` both answered `200`. Pin the exact
+> version, as this recipe does — jsDelivr can serve a stale one briefly after a publish. The full
+> output is in [`docs/verification/2026-10-09-release.md`](docs/verification/2026-10-09-release.md).
 
 ## Component reference
 
