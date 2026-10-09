@@ -3,9 +3,35 @@
   "version": "0.1.0",
   "description": "Perfectly looped clips and manifest for looped-loader",
   "license": "SEE LICENSE IN NOTICE",
-  "repository": { "type": "git", "url": "git+https://github.com/TopClans/looped-loader.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TopClans/looped-loader.git",
+    "directory": "packages/assets"
+  },
+  "homepage": "https://github.com/TopClans/looped-loader#readme",
+  "bugs": {
+    "url": "https://github.com/TopClans/looped-loader/issues"
+  },
+  "author": "TopClans",
+  "keywords": [
+    "clips",
+    "assets",
+    "video",
+    "mp4",
+    "looping",
+    "loader"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
   "type": "module",
-  "files": ["clips", "manifest.json", "checksums.json", "LICENSE", "NOTICE"],
+  "files": [
+    "clips",
+    "manifest.json",
+    "checksums.json",
+    "LICENSE",
+    "NOTICE"
+  ],
   "exports": {
     "./manifest.json": "./manifest.json",
     "./clips/*": "./clips/*"
@@ -15,5 +41,7 @@
     "test": "node scripts/verify.mjs",
     "typecheck": "node --check scripts/verify.mjs"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }

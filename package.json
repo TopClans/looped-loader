@@ -3,12 +3,31 @@
   "private": true,
   "type": "module",
   "packageManager": "pnpm@10.15.1",
-  "engines": { "node": ">=20.11" },
+  "engines": {
+    "node": ">=20.11"
+  },
   "scripts": {
     "build": "node scripts/sync-legal.mjs && pnpm -r build && node scripts/check-size.mjs",
-    "test": "pnpm -r test && node scripts/check-links.mjs",
+    "test": "pnpm -r test && node scripts/check-manifests.mjs && node scripts/check-links.mjs",
     "typecheck": "pnpm -r typecheck",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "check:manifests": "node scripts/check-manifests.mjs",
     "transcode": "pnpm --filter @topclans/looped-loader-tools build && node tools/transcode/dist/index.js"
   },
-  "devDependencies": { "typescript": "~5.9.3" }
+  "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.12.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.11.1",
+    "globals": "^17.13.0",
+    "prettier": "^3.9.9",
+    "typescript": "~5.9.3",
+    "typescript-eslint": "^8.71.1",
+    "vue-eslint-parser": "^10.4.1"
+  }
 }

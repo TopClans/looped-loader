@@ -70,7 +70,6 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
   let resolving = false
   let visibilityBound = false
   let interactionRetryUsed = false
-  let observed: Element | null = null
   let observer: IntersectionObserver | null = null
   const failed = new Set<string>()
 
@@ -278,7 +277,6 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
     },
 
     observeRoot(root: Element) {
-      observed = root
       if (typeof IntersectionObserver === 'undefined') return
       observer = new IntersectionObserver((entries) => {
         const entry = entries[0]
@@ -295,7 +293,6 @@ export function createLoopedLoader(options: LoopedLoaderOptions): LoopedLoader {
       abort?.abort()
       observer?.disconnect()
       observer = null
-      observed = null
       if (video) {
         video.removeEventListener('playing', onPlaying)
         video.removeEventListener('error', onMediaFailure)

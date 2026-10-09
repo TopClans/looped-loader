@@ -2,7 +2,6 @@
 import { ref } from 'vue'
 import { LoopedLoader, useSmoothPending } from '@topclans/looped-loader-vue'
 
-const delayMs = ref(120)
 const pending = ref(false)
 const visible = useSmoothPending(pending, { delay: 120, minVisible: 300 })
 const lastError = ref<string | null>(null)
@@ -62,7 +61,20 @@ function simulate(ms: number): void {
 </template>
 
 <style scoped>
-.scenarios { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
-article { background: #1b1b1b; padding: 12px; border-radius: 8px; min-height: 160px; }
-h2 { font-size: 13px; margin: 0 0 8px; color: #bbb; }
+.scenarios {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+article {
+  background: #1b1b1b;
+  padding: 12px;
+  border-radius: 8px;
+  min-height: 160px;
+}
+h2 {
+  font-size: 13px;
+  margin: 0 0 8px;
+  color: #bbb;
+}
 </style>

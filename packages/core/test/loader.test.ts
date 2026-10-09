@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { createLoopedLoader, prefersReducedMotion, type VideoLike } from '../src/loader.js'
+import { createLoopedLoader, prefersReducedMotion } from '../src/loader.js'
 import { resetRecent } from '../src/pool.js'
 import type { Manifest } from '../src/pool.js'
 
@@ -184,7 +184,12 @@ describe('createLoopedLoader', () => {
     vi.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'))
     const video = fakeVideo()
     const states: string[] = []
-    const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 0, onState: (state) => states.push(state) })
+    const loader = createLoopedLoader({
+      baseUrl: '/clips',
+      seed: 'x',
+      delayMs: 0,
+      onState: (state) => states.push(state),
+    })
     loader.start()
     await flush()
     await flush()
@@ -223,7 +228,10 @@ describe('createLoopedLoader', () => {
   })
 
   it('never creates a video or fetches a clip under reduced motion', async () => {
-    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: true })),
+    )
     const fetchSpy = vi.spyOn(globalThis, 'fetch')
     const onSelect = vi.fn()
     const loader = createLoopedLoader({ baseUrl: '/clips', manifest: undefined, seed: 'x', delayMs: 0, onSelect })
@@ -238,7 +246,14 @@ describe('createLoopedLoader', () => {
   it('falls back to another clip when one fails, then errors after three attempts', async () => {
     const video = fakeVideo()
     const onError = vi.fn()
-    const loader = createLoopedLoader({ baseUrl: '/clips', manifest, seed: 'x', delayMs: 0, onError, clips: ['a', 'b', 'c'] })
+    const loader = createLoopedLoader({
+      baseUrl: '/clips',
+      manifest,
+      seed: 'x',
+      delayMs: 0,
+      onError,
+      clips: ['a', 'b', 'c'],
+    })
     loader.start()
     await flush()
     loader.attach(video)
@@ -356,9 +371,11 @@ describe('createLoopedLoader', () => {
 
   it('resolves exactly once when attach() lands after start()', async () => {
     vi.useFakeTimers()
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
-    )
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+      )
     const video = fakeVideo()
     const onError = vi.fn()
     const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 120, onError })
@@ -389,9 +406,11 @@ describe('createLoopedLoader', () => {
 
   it('does not let attach() shortcut delayMs', async () => {
     vi.useFakeTimers()
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
-    )
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+      )
     const video = fakeVideo()
     const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 120 })
     loader.start()
@@ -405,10 +424,15 @@ describe('createLoopedLoader', () => {
   })
 
   it('never fetches when a video is attached under reduced motion', async () => {
-    vi.stubGlobal('matchMedia', vi.fn(() => ({ matches: true })))
-    const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-      new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn(() => ({ matches: true })),
     )
+    const fetchSpy = vi
+      .spyOn(globalThis, 'fetch')
+      .mockResolvedValue(
+        new Response(JSON.stringify(manifest), { status: 200, headers: { 'content-type': 'application/json' } }),
+      )
     const video = fakeVideo()
     const loader = createLoopedLoader({ baseUrl: '/clips', seed: 'x', delayMs: 0 })
     loader.start()
