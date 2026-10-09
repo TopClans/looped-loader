@@ -1,11 +1,13 @@
 # Transcode QC report
 
-Clips: 32  Total: 3.86 MB
+Clips: 32 Total: 3.86 MB
 
 ## Errors
+
 none
 
 ## Review
+
 - 0AMt9sYf-yB1Zu0Px8rtIMFvx3fzgltIaaQ5nIz0CA4: loop-seam-review — seam 27.09 exceeds the p90 step 25.60
 - 2p1qoycrgfm31: loop-seam-review — seam 4.80 exceeds the p90 step 3.12
 - TGH-SlSNsq9B1KAxoZ9IGjAX7SUTVlTOBq3rg6BRrfI: loop-seam-review — seam 22.77 exceeds the p90 step 14.29
@@ -22,6 +24,7 @@ none
 - zzJvvlxWajW38krS7Dh7n3fIHXU-WSs0IM1UTXXJzcQ: seam-regression-noise — seam grew from 1.16 to 1.42, below the 2.0 noise floor — recorded, not a failure
 
 ## Budget adaptations
+
 - TGH-SlSNsq9B1KAxoZ9IGjAX7SUTVlTOBq3rg6BRrfI: budget-adapted (crf 30, long side 480)
 - azgfEFJhDSwy5D44YfXwmSM7ObncWSLua1xyVNtvQa4: budget-adapted (crf 29, long side 480)
 - gw2u04xr37r11: budget-adapted (crf 28, long side 480)

@@ -15,13 +15,19 @@ afterAll(() => rmSync(workDir, { recursive: true, force: true }))
 const makeClip = (dir: string, name: string): void => {
   mkdirSync(dir, { recursive: true })
   execFileSync('ffmpeg', [
-    '-v', 'error',
+    '-v',
+    'error',
     '-y',
-    '-f', 'lavfi',
-    '-i', 'testsrc=size=160x120:rate=10:duration=0.6',
-    '-pix_fmt', 'yuv420p',
-    '-c:v', 'libx264',
-    '-threads', '1',
+    '-f',
+    'lavfi',
+    '-i',
+    'testsrc=size=160x120:rate=10:duration=0.6',
+    '-pix_fmt',
+    'yuv420p',
+    '-c:v',
+    'libx264',
+    '-threads',
+    '1',
     join(dir, `${name}.mp4`),
   ])
 }

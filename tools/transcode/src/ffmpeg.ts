@@ -43,17 +43,22 @@ export function parseProbe(json: ProbeJson, bytes: number): ProbeInfo {
   const fps = parseFps(video.avg_frame_rate)
   const durationMs = Math.round(Number(json.format?.duration ?? 0) * 1000)
   const declared = Number(video.nb_frames)
-  const frames = Number.isFinite(declared) && declared > 0 ? declared : Math.max(1, Math.round((durationMs / 1000) * fps))
+  const frames =
+    Number.isFinite(declared) && declared > 0 ? declared : Math.max(1, Math.round((durationMs / 1000) * fps))
   return { width: video.width, height: video.height, fps, frames, durationMs, bytes }
 }
 
 /** Runs ffprobe and returns parsed info. Falls back to a temp file if stdout cannot be piped. */
 export function probeClip(file: string): ProbeInfo {
   const args = [
-    '-v', 'error',
-    '-show_entries', 'stream=width,height,avg_frame_rate,nb_frames',
-    '-show_entries', 'format=duration',
-    '-of', 'json',
+    '-v',
+    'error',
+    '-show_entries',
+    'stream=width,height,avg_frame_rate,nb_frames',
+    '-show_entries',
+    'format=duration',
+    '-of',
+    'json',
     file,
   ]
   const result = spawnSync('ffprobe', args, { encoding: 'utf8' })
@@ -89,14 +94,21 @@ export function runEncode(plan: EncodePlan, input: string, output: string): void
 /** Lossless reference at the plan's box and frame rate, for SSIM comparison. */
 export function runLosslessReference(plan: EncodePlan, input: string, output: string): void {
   runFfmpeg([
-    '-v', 'error',
+    '-v',
+    'error',
     '-y',
-    '-i', input,
-    '-vf', `scale=${plan.width}:${plan.height},fps=${plan.fps}`,
-    '-c:v', 'libx264',
-    '-qp', '0',
-    '-preset', 'ultrafast',
-    '-threads', '1',
+    '-i',
+    input,
+    '-vf',
+    `scale=${plan.width}:${plan.height},fps=${plan.fps}`,
+    '-c:v',
+    'libx264',
+    '-qp',
+    '0',
+    '-preset',
+    'ultrafast',
+    '-threads',
+    '1',
     '-an',
     output,
   ])
@@ -104,9 +116,13 @@ export function runLosslessReference(plan: EncodePlan, input: string, output: st
 
 /** FFmpeg reports SSIM on stderr; the "All:" figure is the average over all planes. */
 export function ssimOf(encoded: string, reference: string): number {
-  const result = spawnSync('ffmpeg', ['-v', 'info', '-y', '-i', encoded, '-i', reference, '-lavfi', 'ssim', '-f', 'null', '-'], {
-    encoding: 'utf8',
-  })
+  const result = spawnSync(
+    'ffmpeg',
+    ['-v', 'info', '-y', '-i', encoded, '-i', reference, '-lavfi', 'ssim', '-f', 'null', '-'],
+    {
+      encoding: 'utf8',
+    },
+  )
   const match = /All:([0-9.]+|inf)/.exec(`${result.stderr ?? ''}`)
   if (!match?.[1]) throw new FfmpegError(`could not read SSIM for ${encoded}`)
   return match[1] === 'inf' ? 1 : Number(match[1])

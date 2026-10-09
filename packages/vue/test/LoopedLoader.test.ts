@@ -31,10 +31,13 @@ const matchMedia = (matches: boolean) => {
     addListener: () => {},
     removeListener: () => {},
   }
-  return { mql: mql as unknown as MediaQueryList, emit: (value: boolean) => {
-    Object.defineProperty(mql, 'matches', { value, configurable: true })
-    for (const listener of listeners) listener({ matches: value } as MediaQueryListEvent)
-  } }
+  return {
+    mql: mql as unknown as MediaQueryList,
+    emit: (value: boolean) => {
+      Object.defineProperty(mql, 'matches', { value, configurable: true })
+      for (const listener of listeners) listener({ matches: value } as MediaQueryListEvent)
+    },
+  }
 }
 
 describe('LoopedLoader', () => {

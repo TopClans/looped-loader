@@ -22,7 +22,8 @@ for (const clip of manifest.clips) {
     }
     total += bytes
     const declared = clip.bytes?.mp4
-    if (declared !== undefined && declared !== bytes) problems.push(`${clip.id}: manifest says ${declared} bytes, file is ${bytes}`)
+    if (declared !== undefined && declared !== bytes)
+      problems.push(`${clip.id}: manifest says ${declared} bytes, file is ${bytes}`)
     const digest = createHash('sha256').update(readFileSync(file)).digest('hex')
     const expected = clip.sha256?.mp4
     if (expected && expected !== digest) problems.push(`${clip.id}: sha256 mismatch`)

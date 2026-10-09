@@ -26,10 +26,31 @@ const kb = (bytes: number | undefined) => `${Math.round((bytes ?? 0) / 1024)} KB
 </template>
 
 <style scoped>
-.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 16px; padding: 0; list-style: none; }
-li { background: #1b1b1b; padding: 12px; border-radius: 8px; }
-dl { margin: 8px 0 0; font-size: 12px; }
-dt { font-family: ui-monospace, monospace; overflow-wrap: anywhere; }
-dd { margin: 2px 0; color: #aaa; }
-strong { color: #ffb454; }
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+  padding: 0;
+  list-style: none;
+}
+li {
+  background: #1b1b1b;
+  padding: 12px;
+  border-radius: 8px;
+}
+dl {
+  margin: 8px 0 0;
+  font-size: 12px;
+}
+dt {
+  font-family: ui-monospace, monospace;
+  overflow-wrap: anywhere;
+}
+dd {
+  margin: 2px 0;
+  color: #aaa;
+}
+strong {
+  color: #ffb454;
+}
 </style>
