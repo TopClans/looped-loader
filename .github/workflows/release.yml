@@ -39,7 +39,10 @@ jobs:
           # Node 24 ships npm 11, above the 11.5.1 trusted-publishing floor.
           node-version: 24
           registry-url: https://registry.npmjs.org
-          package-manager-cache: false
+          # No `cache:` input on purpose: a cached pnpm store is not worth the extra
+          # variable in the one job that holds an OIDC identity. (`package-manager-cache`
+          # used to sit here; setup-node does not define that input — the dry run warned
+          # "Unexpected input(s) 'package-manager-cache'" and it did nothing.)
       - run: pnpm install --frozen-lockfile
       # `build` before `typecheck`, and the root `build` rather than `pnpm -r build`:
       #   * packages/core/dist is gitignored, and packages/vue resolves the core through

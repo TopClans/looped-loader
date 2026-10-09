@@ -1651,7 +1651,9 @@ jobs:
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
-          package-manager-cache: false
+          # No `cache:` input. The design-time block had `package-manager-cache: false`,
+          # which setup-node does not define: the dry run on 2026-10-09 warned
+          # "Unexpected input(s) 'package-manager-cache'" and the line did nothing.
       - run: pnpm install --frozen-lockfile
       # The ROOT `pnpm build`, for the same TS2307 reason as the CI matrix and for one more
       # that only this job has: the root script runs `scripts/sync-legal.mjs`, which writes
