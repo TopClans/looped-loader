@@ -63,7 +63,10 @@ npm trust list @topclans/looped-loader-core
 - npm does not verify the configuration when it is saved. A wrong field surfaces only on the
   first publish.
 
-## The first publish is the exception, and it was measured
+## The first publish: the open question, as it looked before the answer
+
+> **Superseded.** This section records the state before the question was answered. What actually
+> happened is in "The first publish, as it went" below; read that one first.
 
 `npm trust` could not be attached to these packages before they exist, from this machine, on
 2026-10-09 — after the owner had logged in:
@@ -90,6 +93,49 @@ configuring one from the package's *settings*).
   short-lived token created for that one release (handed over through the vault, never as a
   command argument), revoke it, and configure trusted publishing for `0.1.1`. `0.1.0` would then
   carry **no attestation** — a release note, not a footnote.
+
+## The first publish, as it went
+
+`npm trust` cannot be attached to a package that does not exist yet. Measured on 2026-10-09,
+with the owner's session authenticated, the call moved from `403` to `404 Not Found` — what was
+missing was the package, not the credentials:
+
+```text
+POST https://registry.npmjs.org/-/package/@topclans%2flooped-loader-core/trust
+-> 403 before the session was authenticated
+-> 404 Not Found after it
+```
+
+**How `0.1.0` was released.** A placeholder `0.0.1` of each package was published first, under the
+`placeholder` dist-tag and never `latest`, then deprecated with "placeholder that reserves the
+package name; install 0.1.0 or later". That made the three names exist, the trusted publisher was
+configured for all three, and `0.1.0` itself went out through the tag workflow with OIDC and
+provenance. **No release version was published from a developer machine.**
+
+**Writes on this account require proof of presence.** `npm deprecate` from a granular access token
+answers `EOTP`, and configuring a trusted publisher opens the browser challenge at
+`https://www.npmjs.com/auth/cli/…`. A granular token with "bypass 2FA" enabled avoids the browser;
+either way the owner is in the loop the first time a new package name is released. The tag publish
+needs none of it — OIDC is the proof.
+
+**A new package's packument lags its own publish.** Minutes after a successful publish the
+packument can still answer `404` from the read cache while `/-/package/<name>/dist-tags` and the
+tarball URL already answer correctly. Do not conclude that a publish failed from a `404` on the
+packument alone: check the dist-tags endpoint and the workflow log first. This cost real time on
+2026-10-09 and is worth remembering before the next first release.
+
+## The GitHub release
+
+The workflow publishes to npm and stops there. It runs with `contents: read`, and creating a
+GitHub Release needs `contents: write`, so the release is created by hand once the tag run is
+green:
+
+```powershell
+gh release create v0.1.0 --title "0.1.0" --notes-file <notes>
+```
+
+Automating it is a deliberate decision rather than an omission: a release workflow that can write
+to the repository can also move tags and edit releases.
 
 ## The dry run
 

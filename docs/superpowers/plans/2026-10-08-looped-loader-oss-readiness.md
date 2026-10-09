@@ -1600,6 +1600,15 @@ git commit -m "docs: repository settings before and after going public"
 
 - [ ] **Step 1: Resolve the one open question first**
 
+> **Answered on 2026-10-09: `npm trust` requires an existing package.** Authenticated, the call
+> answered `404 Not Found` on the POST and on `list` while the package did not exist, and
+> succeeded once a placeholder `0.0.1` had reserved the name. The release therefore followed the
+> placeholder route: `0.0.1` under the `placeholder` dist-tag, deprecated; the trusted publisher
+> configured for all three; then `0.1.0` published by the tag workflow with OIDC and provenance.
+> The text below is kept as the record of how the question was framed before it was answered —
+> see `docs/release.md` → "The first publish, as it went" and
+> `docs/verification/2026-10-09-release.md`.
+
 **Answered by measurement on 2026-10-09, and the answer is "not from this session".** The
 `--dry-run` probe is green, but it never reaches the registry. The real call was made once the
 owner had logged in:
