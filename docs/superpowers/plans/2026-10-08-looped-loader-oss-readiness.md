@@ -313,7 +313,7 @@ bite a real consumer or contributor first. Each has a test in its owning task.
 - [ ] **Step 1: Install the tooling**
 
 ```powershell
-pnpm add -D -w eslint@^10 @eslint/js@^10 typescript-eslint@^8 eslint-plugin-vue@^10 vue-eslint-parser@^10 eslint-config-prettier@^10 prettier@^3 @commitlint/cli@^21 @commitlint/config-conventional@^21
+pnpm add -D -w eslint@^10 @eslint/js@^10 typescript-eslint@^8 eslint-plugin-vue@^10 vue-eslint-parser@^10 eslint-config-prettier@^10 prettier@^3 @commitlint/cli@^21 @commitlint/config-conventional@^21 globals
 ```
 
 Peers were checked against each other before this plan was written: `typescript-eslint@8.71` accepts `eslint ^10` and `typescript >=4.8.4 <6.1`, and `eslint-plugin-vue@10.11` accepts `eslint ^10`. `vue-eslint-parser` is listed explicitly because pnpm does not install peer dependencies for you.
@@ -354,6 +354,7 @@ export default {
 import js from '@eslint/js'
 import prettier from 'eslint-config-prettier'
 import vue from 'eslint-plugin-vue'
+import globals from 'globals'
 import tseslint from 'typescript-eslint'
 
 export default tseslint.config(
@@ -364,6 +365,14 @@ export default tseslint.config(
       'packages/assets/clips/**',
       'packages/demo/public/**',
       'docs/**',
+      // Session state beside the sources. Unlike Prettier, ESLint does not read
+      // `.gitignore`, so without these lines `eslint .` in the main checkout descends
+      // into every worktree under `.worktrees/` and lints a second, potentially stale
+      // copy of the whole repository — measured, not assumed.
+      '.worktrees/**',
+      '.waves/**',
+      '.superpowers/**',
+      '.probe/**',
     ],
   },
   js.configs.recommended,
@@ -371,17 +380,44 @@ export default tseslint.config(
   ...vue.configs['flat/recommended'],
   {
     files: ['**/*.vue'],
-    languageOptions: { parserOptions: { parser: tseslint.parser } },
+    languageOptions: { parserOptions: { parser: tseslint.parser }, globals: { ...globals.browser } },
+  },
+  // The workspace scripts run under Node, and ESLint's default environment knows neither
+  // `console` nor `process`; declaring the runtime here is what keeps `no-undef` on
+  // everywhere instead of switching it off to silence these exact errors.
+  {
+    files: ['**/*.mjs'],
+    languageOptions: { globals: { ...globals.node } },
   },
   {
     rules: {
       '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
       '@typescript-eslint/consistent-type-imports': 'error',
+      // Unreachable as written here: with `exactOptionalPropertyTypes: true` the
+      // `LooseRequired` inside Vue's `InferDefault` strips `undefined`, so an explicit
+      // `default: undefined` on an optional prop fails vue-tsc with TS2379 — observed on
+      // all five optional props of LoopedLoader, and no type-true default exists for
+      // `manifest: unknown` (only `(props) => {}` is assignable, not `() => undefined`).
+      // The props are optional in the type, so `undefined` already is their contract.
+      'vue/require-default-prop': 'off',
     },
   },
   prettier,
 )
 ```
+
+**Corrected 2026-10-09 during E4.1** (the plan block above is the corrected version;
+what shipped as prose before execution was wrong three ways, each observed rather than
+reasoned): the block had **no `globals` package and no `languageOptions.globals`**, so
+the first `pnpm lint` reported 37 `no-undef` errors (`console`, `process`, `window`,
+`HTMLElement`, `setTimeout`, `MediaQueryListEvent`) across every Node script and every
+SFC; it had **no session-state ignores**, and `eslint .` was measured lintering a
+gitignored probe file — Prettier, by contrast, was measured *not* checking one, because
+Prettier reads the root `.gitignore` while ESLint reads neither it nor a nested
+`.gitignore` (so `.superpowers/`, whose own `.gitignore` only says `*`, needs an entry in
+**both** configs or `format:check` fails in the main checkout while staying green in CI);
+and it kept `vue/require-default-prop`, which cannot be satisfied here — see the rule's
+comment in the block.
 
 `commitlint.config.mjs`:
 
@@ -417,6 +453,14 @@ NOTICE
 # Lockfile and binaries
 pnpm-lock.yaml
 *.png
+
+# Session state that lives beside the sources in a working checkout: wave reports,
+# writer worktrees and the handover ledger. `.worktrees/`, `.waves/` and `.probe/` are
+# already covered by the root `.gitignore`, which Prettier reads; `.superpowers/` is
+# NOT — its own `.gitignore` is nested, and Prettier only reads ignore files at the
+# root — so without this line `format:check` fails in the main checkout on the ledger
+# while staying green in a fresh clone and in CI.
+.superpowers/
 ```
 
 **Why this file is not cosmetic.** Measured on 2026-10-09: there is no `.prettierignore` in
@@ -434,12 +478,18 @@ Add to the root `package.json` scripts:
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:manifests": "node scripts/check-manifests.mjs",
-    "test": "pnpm -r test && node scripts/check-manifests.mjs"
+    "test": "pnpm -r test && node scripts/check-manifests.mjs && node scripts/check-links.mjs"
 ```
 
 The root `test` script becomes the project's single entry point for "is everything still
-true": the recursive suites plus the metadata check. Task 2 appends the link check to the
-same line.
+true": the recursive suites plus the metadata check plus the link check.
+
+**Corrected 2026-10-09 during E4.1:** this block used to end at `check-manifests.mjs`
+and say "Task 2 appends the link check to the same line" — but Task 2 (E4.2) was
+executed **before** Task 1 (E4.1), so the link check was already on the line when Task 1
+started. Writing the plan's version verbatim would have silently dropped
+`check-links.mjs` from `pnpm test`, turning E4.2's acceptance green-in-CI into
+dead wiring.
 
 - [ ] **Step 3: Write the failing metadata check**
 
@@ -456,7 +506,7 @@ const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 // the GitHub repository, and a mismatch surfaces only at publish time as ENEEDAUTH.
 const EXPECTED_REPOSITORY = 'git+https://github.com/TopClans/looped-loader.git'
 const packages = ['packages/core', 'packages/vue', 'packages/assets']
-const required = ['name', 'version', 'license', 'repository', 'homepage', 'bugs', 'keywords', 'engines']
+const required = ['name', 'version', 'license', 'repository', 'homepage', 'bugs', 'keywords', 'engines', 'author']
 
 const problems = []
 
@@ -489,7 +539,10 @@ console.log(`package metadata ok: ${packages.length} packages`)
 
 Run: `node scripts/check-manifests.mjs`
 
-Expected: FAIL listing the missing fields for all three packages — `repository`, `homepage`, `bugs`, `keywords` at minimum. A failure about a missing file instead means the path list is wrong, not that the check works.
+Expected: FAIL listing the missing fields for all three packages — `homepage`, `bugs`,
+`keywords` and `author` at minimum (`repository` is already present in all three since
+the release preparation; `engines` is missing only from vue and assets — see A1).
+A failure about a missing file instead means the path list is wrong, not that the check works.
 
 - [ ] **Step 5: Add the metadata**
 
@@ -538,11 +591,11 @@ Append to `.github/workflows/ci.yml`:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.15.1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -555,13 +608,13 @@ Append to `.github/workflows/ci.yml`:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           fetch-depth: 0
-      - uses: pnpm/action-setup@v4
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.15.1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 22
           cache: pnpm
@@ -813,11 +866,11 @@ Replace the single `test` job in `.github/workflows/ci.yml` with:
     runs-on: ${{ matrix.os }}
     timeout-minutes: 25
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.15.1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node }}
           cache: pnpm
@@ -1672,11 +1725,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
         with:
           version: 10.15.1
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
           registry-url: https://registry.npmjs.org
@@ -1696,7 +1749,7 @@ jobs:
         run: node scripts/check-tarballs.mjs
       - name: Upload the tarball inventory
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: tarball-inventory
           path: tarball-inventory.json
