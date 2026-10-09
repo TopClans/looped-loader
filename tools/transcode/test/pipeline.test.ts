@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
@@ -17,7 +17,22 @@ describe.skipIf(!available)('transcode pipeline', () => {
   const out = join(workDir, 'assets')
 
   it('probes a generated fixture', () => {
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc=size=160x120:rate=10:duration=0.6', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-threads', '1', join(workDir, 'fixture.mp4')])
+    execFileSync('ffmpeg', [
+      '-v',
+      'error',
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'testsrc=size=160x120:rate=10:duration=0.6',
+      '-pix_fmt',
+      'yuv420p',
+      '-c:v',
+      'libx264',
+      '-threads',
+      '1',
+      join(workDir, 'fixture.mp4'),
+    ])
     const info = probeClip(join(workDir, 'fixture.mp4'))
     expect(info.width).toBe(160)
     expect(info.height).toBe(120)
@@ -39,7 +54,22 @@ describe.skipIf(!available)('transcode pipeline', () => {
 
   it('writes a manifest, a QC report and an assets tree', async () => {
     mkdirSync(gifs, { recursive: true })
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc=size=160x120:rate=10:duration=0.6', '-pix_fmt', 'yuv420p', '-c:v', 'libx264', '-threads', '1', join(gifs, 'fixture.mp4')])
+    execFileSync('ffmpeg', [
+      '-v',
+      'error',
+      '-y',
+      '-f',
+      'lavfi',
+      '-i',
+      'testsrc=size=160x120:rate=10:duration=0.6',
+      '-pix_fmt',
+      'yuv420p',
+      '-c:v',
+      'libx264',
+      '-threads',
+      '1',
+      join(gifs, 'fixture.mp4'),
+    ])
     const code = await main(['--gifs', gifs, '--out', out])
     expect(code).toBe(0)
     const manifest = JSON.parse(readFileSync(join(out, 'manifest.json'), 'utf8'))

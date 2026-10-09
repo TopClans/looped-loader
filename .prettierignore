@@ -1,0 +1,27 @@
+# Build output and generated artefacts: reformatting these either breaks the build or
+# makes `format:check` fail after every rebuild.
+**/dist/
+coverage/
+packages/assets/clips/
+packages/demo/public/
+packages/*/LICENSE
+packages/assets/NOTICE
+
+# Documents are written by hand and by agents, not by a formatter. Without this line
+# `prettier --write .` rewrites the plans, the specs and the tracker — including the plan
+# the executor is reading, which is how the diff of this task turns into a 3000-line review.
+docs/
+README.md
+NOTICE
+
+# Lockfile and binaries
+pnpm-lock.yaml
+*.png
+
+# Session state that lives beside the sources in a working checkout: wave reports,
+# writer worktrees and the handover ledger. `.worktrees/`, `.waves/` and `.probe/` are
+# already covered by the root `.gitignore`, which Prettier reads; `.superpowers/` is
+# NOT — its own `.gitignore` is nested, and Prettier only reads ignore files at the
+# root — so without this line `format:check` fails in the main checkout on the ledger
+# while staying green in a fresh clone and in CI.
+.superpowers/

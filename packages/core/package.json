@@ -3,21 +3,51 @@
   "version": "0.1.0",
   "description": "Framework-free core for looped-loader: clip selection, manifest validation, video lifecycle",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/TopClans/looped-loader.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TopClans/looped-loader.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/TopClans/looped-loader#readme",
+  "bugs": {
+    "url": "https://github.com/TopClans/looped-loader/issues"
+  },
+  "author": "TopClans",
+  "keywords": [
+    "loader",
+    "spinner",
+    "looping",
+    "video",
+    "mp4",
+    "framework-free"
+  ],
   "type": "module",
   "sideEffects": false,
-  "files": ["dist", "LICENSE"],
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" }
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
   },
   "scripts": {
     "build": "tsc -p tsconfig.json",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
-  "engines": { "node": ">=20.11" },
-  "publishConfig": { "access": "public" },
-  "devDependencies": { "typescript": "~5.9.3", "vitest": "^5.0.3" }
+  "engines": {
+    "node": ">=20.11"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.3"
+  }
 }

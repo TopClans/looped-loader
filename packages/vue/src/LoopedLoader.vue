@@ -49,7 +49,9 @@ const query =
 const root = ref<HTMLElement | null>(null)
 const videoEl = ref<HTMLVideoElement | null>(null)
 const state = ref<State>('idle')
-const clip = shallowRef<Clip | null>(null)
+// Named `activeClip`, not `clip`: the props already own that key, and script setup
+// exposes both to the template, so a second `clip` would be a duplicate-key collision.
+const activeClip = shallowRef<Clip | null>(null)
 const reducedMotion = ref(props.respectReducedMotion && (query?.matches ?? false))
 
 let loader: LoopedLoaderHandle | null = null
@@ -58,7 +60,7 @@ let loader: LoopedLoaderHandle | null = null
 const mounted = ref(false)
 
 const showVideo = computed(() => mounted.value && !reducedMotion.value && state.value !== 'error')
-const aspect = computed(() => (clip.value ? `${clip.value.width} / ${clip.value.height}` : '16 / 9'))
+const aspect = computed(() => (activeClip.value ? `${activeClip.value.width} / ${activeClip.value.height}` : '16 / 9'))
 
 function onMotionChange(event: MediaQueryListEvent): void {
   reducedMotion.value = props.respectReducedMotion && event.matches
@@ -84,10 +86,10 @@ onMounted(() => {
     respectReducedMotion: props.respectReducedMotion,
     onState: (next) => {
       state.value = next
-      if (next === 'playing' && clip.value) emit('ready', clip.value)
+      if (next === 'playing' && activeClip.value) emit('ready', activeClip.value)
     },
     onSelect: (next) => {
-      clip.value = next
+      activeClip.value = next
       emit('select', next)
     },
     onError: (failure) => emit('error', failure),
@@ -109,11 +111,7 @@ onBeforeUnmount(() => {
   <div
     ref="root"
     class="ll-root"
-    :class="[
-      `ll-size-${size}`,
-      `ll-mode-${mode}`,
-      { 'll-rounded': rounded, 'll-playing': state === 'playing' },
-    ]"
+    :class="[`ll-size-${size}`, `ll-mode-${mode}`, { 'll-rounded': rounded, 'll-playing': state === 'playing' }]"
     :data-state="state"
     role="status"
     aria-live="polite"
@@ -144,10 +142,18 @@ onBeforeUnmount(() => {
   justify-content: center;
   background: var(--ll-bg, transparent);
 }
-.ll-size-sm { --ll-size: 40px; }
-.ll-size-md { --ll-size: 96px; }
-.ll-size-lg { --ll-size: 200px; }
-.ll-size-full { --ll-size: 100%; }
+.ll-size-sm {
+  --ll-size: 40px;
+}
+.ll-size-md {
+  --ll-size: 96px;
+}
+.ll-size-lg {
+  --ll-size: 200px;
+}
+.ll-size-full {
+  --ll-size: 100%;
+}
 .ll-mode-overlay {
   position: fixed;
   inset: 0;
@@ -188,10 +194,16 @@ onBeforeUnmount(() => {
   white-space: nowrap;
 }
 @keyframes ll-spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .ll-spinner { animation: none; }
-  .ll-video { transition: none; }
+  .ll-spinner {
+    animation: none;
+  }
+  .ll-video {
+    transition: none;
+  }
 }
 </style>

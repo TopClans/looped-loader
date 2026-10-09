@@ -3,14 +3,43 @@
   "version": "0.1.0",
   "description": "Vue 3 adapter for looped-loader: a looping clip instead of a spinner",
   "license": "MIT",
-  "repository": { "type": "git", "url": "git+https://github.com/TopClans/looped-loader.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TopClans/looped-loader.git",
+    "directory": "packages/vue"
+  },
+  "homepage": "https://github.com/TopClans/looped-loader#readme",
+  "bugs": {
+    "url": "https://github.com/TopClans/looped-loader/issues"
+  },
+  "author": "TopClans",
+  "keywords": [
+    "vue",
+    "loader",
+    "spinner",
+    "looping",
+    "video",
+    "mp4",
+    "component"
+  ],
+  "engines": {
+    "node": ">=20.11"
+  },
   "type": "module",
-  "sideEffects": ["**/*.css"],
-  "files": ["dist", "LICENSE"],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "files": [
+    "dist",
+    "LICENSE"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js" },
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
     "./style.css": "./dist/index.css"
   },
   "scripts": {
@@ -18,8 +47,12 @@
     "typecheck": "vue-tsc -p tsconfig.json --noEmit",
     "test": "vitest run"
   },
-  "peerDependencies": { "vue": "^3.4" },
-  "dependencies": { "@topclans/looped-loader-core": "workspace:*" },
+  "peerDependencies": {
+    "vue": "^3.4"
+  },
+  "dependencies": {
+    "@topclans/looped-loader-core": "workspace:*"
+  },
   "devDependencies": {
     "@vitejs/plugin-vue": "^6.0.9",
     "@vue/test-utils": "^2.5.1",
@@ -30,5 +63,7 @@
     "vue": "^3.5.43",
     "vue-tsc": "^3.3.12"
   },
-  "publishConfig": { "access": "public" }
+  "publishConfig": {
+    "access": "public"
+  }
 }
