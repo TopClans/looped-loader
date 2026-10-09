@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Vue 3 adapter for looped-loader: a looping clip instead of a spinner",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/TopClans/looped-loader.git" },
   "type": "module",
   "sideEffects": ["**/*.css"],
   "files": ["dist", "LICENSE"],

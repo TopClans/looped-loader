@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Perfectly looped clips and manifest for looped-loader",
   "license": "SEE LICENSE IN NOTICE",
+  "repository": { "type": "git", "url": "git+https://github.com/TopClans/looped-loader.git" },
   "type": "module",
   "files": ["clips", "manifest.json", "checksums.json", "LICENSE", "NOTICE"],
   "exports": {

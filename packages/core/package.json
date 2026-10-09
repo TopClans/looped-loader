@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Framework-free core for looped-loader: clip selection, manifest validation, video lifecycle",
   "license": "MIT",
+  "repository": { "type": "git", "url": "git+https://github.com/TopClans/looped-loader.git" },
   "type": "module",
   "sideEffects": false,
   "files": ["dist", "LICENSE"],
