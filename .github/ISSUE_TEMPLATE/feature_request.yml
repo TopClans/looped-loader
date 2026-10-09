@@ -1,0 +1,58 @@
+name: Feature request
+description: Propose a change to what the loader does
+labels: ['enhancement']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before writing: the [out-of-scope list](https://github.com/TopClans/looped-loader/blob/main/SUPPORT.md#out-of-scope)
+        names the things this project has already decided not to build — a React adapter,
+        WebM/AV1, a Web Component build, audio, captions, a global one-video-at-a-time
+        registry, changesets, and any CDN run by the project. A proposal about one of those
+        needs to argue against the reason it was declined, not around it.
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What you are trying to do, and where the current behaviour gets in the way. A concrete case beats a general principle.
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: What you propose
+      description: The API or the behaviour you want to see.
+    validations:
+      required: true
+  - type: dropdown
+    id: layer
+    attributes:
+      label: Which layer does this belong to?
+      description: The core is framework-free and has zero runtime dependencies; the adapter is a thin Vue shell over it.
+      options:
+        - The core (`@topclans/looped-loader-core`) — framework-free behaviour every adapter inherits
+        - The Vue adapter (`@topclans/looped-loader-vue`) — Vue-specific surface
+        - The clip set or the transcode pipeline (`@topclans/looped-loader-assets`, `tools/transcode`)
+        - The documentation or the demo
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives you considered
+      description: Including doing nothing, and what that costs you.
+    validations:
+      required: false
+  - type: checkboxes
+    id: constraints
+    attributes:
+      label: Constraints this proposal respects
+      options:
+        - label: It needs no runtime dependency in the core
+          required: false
+        - label: It fits the core's bundle budget (8 KB gzip) or the adapter's (12 KB gzip, JS and CSS together)
+          required: false
+        - label: It does not add a seventh error code — the six in the spec are a closed set
+          required: false
+        - label: It is honest under `prefers-reduced-motion: reduce` — no clip is fetched and nothing animates
+          required: false

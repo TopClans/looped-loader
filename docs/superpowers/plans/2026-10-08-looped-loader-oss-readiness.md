@@ -599,7 +599,16 @@ import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const entries = ['README.md', 'CONTRIBUTING.md', 'SECURITY.md', 'SUPPORT.md', 'GOVERNANCE.md', 'docs']
+const entries = [
+  'README.md',
+  'CONTRIBUTING.md',
+  'SECURITY.md',
+  'SUPPORT.md',
+  'GOVERNANCE.md',
+  'CHANGELOG.md',
+  'ACCESSIBILITY.md',
+  'docs',
+]
 const LINK = /\]\(([^)#\s]+)(?:#[^)]*)?\)/g
 
 function* markdownFiles(entry) {
@@ -638,6 +647,12 @@ if (problems.length > 0) {
 
 console.log('relative links ok')
 ```
+
+`CHANGELOG.md` and `ACCESSIBILITY.md` are in that list on purpose. Without the first, the root
+document most likely to link a new policy file was the one document the check never read —
+found by the 2026-10-09 audit. The second is listed before it exists so that E3.3 cannot escape
+the check; `markdownFiles` returns nothing for an absent path, so listing it early is safe.
+`CODE_OF_CONDUCT.md` is absent because the owner declined to publish one (D-31).
 
 Run: `node scripts/check-links.mjs`
 

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or usage help
+    url: https://github.com/TopClans/looped-loader/discussions
+    about: Ask here rather than in an issue — issues are for defects and proposals.
+  - name: Report a security vulnerability
+    url: https://github.com/TopClans/looped-loader/security/advisories/new
+    about: Report privately through a draft advisory. Do not open a public issue for a vulnerability.
+  - name: Rights-holder request about a clip
+    url: https://github.com/TopClans/looped-loader/blob/main/NOTICE
+    about: The clip set is third-party material redistributed without a licence audit; NOTICE states the boundary and the route.

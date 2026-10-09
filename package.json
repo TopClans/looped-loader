@@ -6,7 +6,7 @@
   "engines": { "node": ">=20.11" },
   "scripts": {
     "build": "node scripts/sync-legal.mjs && pnpm -r build && node scripts/check-size.mjs",
-    "test": "pnpm -r test",
+    "test": "pnpm -r test && node scripts/check-links.mjs",
     "typecheck": "pnpm -r typecheck",
     "transcode": "pnpm --filter @topclans/looped-loader-tools build && node tools/transcode/dist/index.js"
   },

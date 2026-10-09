@@ -1,0 +1,69 @@
+name: Bug report
+description: Something the loader does that it should not
+labels: ['bug']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. The five questions below are the ones every real bug report
+        about this component has needed — answering them means the first reply can be about
+        the cause instead of about the setup.
+
+        A question rather than a defect? Use
+        [Discussions](https://github.com/TopClans/looped-loader/discussions) instead.
+  - type: input
+    id: browser
+    attributes:
+      label: Browser and version
+      description: The one where it happens. Include the engine if it is not obvious.
+      placeholder: Chrome 141.0.7390.55 / Safari 18.2
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Package versions
+      description: The three published packages are versioned in lockstep; say which version you installed, and which Vue.
+      placeholder: '@topclans/looped-loader-vue 0.1.0, @topclans/looped-loader-assets 0.1.0, vue 3.5.43'
+    validations:
+      required: true
+  - type: dropdown
+    id: hosting
+    attributes:
+      label: How are the assets served?
+      options:
+        - Self-hosted — manifest.json and clips/ copied into my own static directory
+        - CDN — jsDelivr or another third-party host
+        - I pass `manifest` or `manifestUrl` myself, so there is no fetch
+        - Something else (say so below)
+    validations:
+      required: true
+  - type: input
+    id: baseurl
+    attributes:
+      label: The `base-url` (or `manifest-url`) you pass
+      description: The exact string, including any trailing slash.
+      placeholder: /looped-clips
+    validations:
+      required: true
+  - type: textarea
+    id: console
+    attributes:
+      label: Console output
+      description: Errors and warnings, plus the payload of any `error` event — its `code` is one of `manifest-fetch`, `manifest-invalid`, `clip-fetch`, `decode`, `autoplay-blocked`, `no-clips`.
+      render: text
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Smallest reproduction
+      description: A snippet, a repository, or the steps from the demo that show it.
+    validations:
+      required: false
