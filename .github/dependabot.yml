@@ -7,6 +7,21 @@ updates:
     groups:
       dev-dependencies:
         dependency-type: development
+    ignore:
+      # TypeScript 7 is a new native compiler and this toolchain does not support it yet.
+      # Measured on PR #5, 2026-10-09:
+      #   packages/vue build: Error [ERR_PACKAGE_PATH_NOT_EXPORTED]: Package subpath './lib/tsc'
+      #   is not defined by "exports" in …/vue-tsc@3.3.12_typescript@7.0.2/node_modules/typescript/package.json
+      # `vue-tsc@3.3.12` is the pinned declaration tool and it does not resolve TS 7. This is the
+      # exclusion recorded as D-1 in docs/epic/PROGRESS.md — lift it deliberately, with a
+      # vue-tsc that declares support, not by accepting a green-looking bump.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Types for a runtime this project does not use: it supports node >= 20.11 and CI runs
+      # 20/22/24. `@types/node` 26 describes APIs that are not present on those runtimes, so the
+      # major bump is a decision rather than an update.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
   - package-ecosystem: github-actions
     directory: /
     schedule:
