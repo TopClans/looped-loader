@@ -1,0 +1,75 @@
+name: release
+
+# Tag-triggered release through npm trusted publishing (OIDC).
+#
+# There is no NPM_TOKEN in this repository and there must never be one: the npm CLI
+# detects the OIDC environment (permissions.id-token: write) and exchanges it for a
+# short-lived publish token. Provenance is attached automatically because the
+# repository is public and the packages are public — publishConfig.provenance is
+# deliberately left unset so OIDC decides.
+#
+# The dry-run job exists so that a broken workflow is discovered before a tag is
+# pushed: npm does not allow unpublishing a version, so a tag spent on a broken
+# release cannot be taken back.
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Run the pack and dry-run publish without touching the registry'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.15.1
+      - uses: actions/setup-node@v4
+        with:
+          # Node 24 ships npm 11, above the 11.5.1 trusted-publishing floor.
+          node-version: 24
+          registry-url: https://registry.npmjs.org
+          package-manager-cache: false
+      - run: pnpm install --frozen-lockfile
+      # `build` before `typecheck`, and the root `build` rather than `pnpm -r build`:
+      #   * packages/core/dist is gitignored, and packages/vue resolves the core through
+      #     those emitted declarations, so type-checking first fails with TS2307 plus a
+      #     cascade of TS7006 — the failure that turned the first push of main red
+      #     (fixed in df65247);
+      #   * the root build runs scripts/sync-legal.mjs, which is what puts LICENSE (and
+      #     NOTICE for assets) inside each package. `pnpm -r build` skips it, and in a
+      #     fresh clone those files do not exist, so every tarball would fail the check.
+      - run: pnpm build
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Inspect the tarballs
+        run: node scripts/check-tarballs.mjs --out tarball-inventory.json
+      - name: Upload the tarball inventory
+        # `always()` on purpose: when the tarball check fails, the inventory is the evidence
+        # of *what* it rejected. An artifact that only exists on the happy path is useless
+        # exactly when it is needed.
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: tarball-inventory
+          path: tarball-inventory.json
+      - name: Publish (dry run)
+        if: github.event_name == 'workflow_dispatch' && inputs.dry_run
+        run: pnpm -r publish --access public --no-git-checks --dry-run
+      # `pnpm -r publish` publishes in workspace order (core → vue → assets, because vue
+      # depends on core) and rewrites `workspace:*` to the published version. It skips
+      # versions already present in the registry, which is what makes a partially failed
+      # release recoverable by re-running this job.
+      - name: Publish
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: pnpm -r publish --access public --no-git-checks
