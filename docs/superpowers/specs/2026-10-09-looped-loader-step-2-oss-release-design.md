@@ -246,7 +246,12 @@ written into `docs/verification/`. No step is taken "while we are here".
 
 - [ ] The owner has reviewed the contact sheet (`docs/verification/2026-10-08-browser/contact-sheet.png`).
       This is criterion 9 of the build plan and it is still open (§3).
-- [ ] Waves 1–4 are merged, `main` is green, and the community profile reads 100 %.
+- [ ] Waves 1–4 are merged, `main` is green, and the community files this project chooses to
+      publish are present. *(Corrected 2026-10-09, before the flip: this line first asked for
+      "the community profile reads 100 %", which measurement shows is unreachable — the owner
+      declined a code of conduct (D-31) and GitHub's profile endpoint does not count the
+      `ISSUE_TEMPLATE/` directory form. The measured reading with every file in place is 85 %,
+      recorded in `docs/verification/repo-settings.md`.)*
 - [ ] `git log --all -- gifs/` is empty (already true) and no file in the history contains a
       credential-shaped string.
 - [ ] **The owner accepts that the whole working record becomes public** — `PROGRESS.md` with

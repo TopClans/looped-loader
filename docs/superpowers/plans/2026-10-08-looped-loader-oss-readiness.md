@@ -714,7 +714,16 @@ Run: `node scripts/check-links.mjs` → expected `relative links ok`.
 gh api repos/TopClans/looped-loader/community/profile --jq '{health:.health_percentage, files:.files}'
 ```
 
-Expected: `health_percentage: 100` with `code_of_conduct`, `contributing`, `issue_template`, `license`, `pull_request_template` and `readme` all non-null. `license` and `readme` come from the build plan's Task 1 and Task 11 — if either is null, that task is not actually done and this is the check that says so.
+Expected, **corrected by measurement on 2026-10-09**: `contributing`, `license`,
+`pull_request_template` and `readme` non-null — and that is the whole of what this repository can
+reach. `code_of_conduct` stays `false` because the owner declined to publish one (D-31), and
+`issue_template` stays `false` even with all three templates on `main`, because this endpoint
+reads the legacy single-file `.github/ISSUE_TEMPLATE.md` while the directory form is what
+GitHub's issue UI serves. The measured reading with the files in place is
+`health_percentage: 85`. The acceptance line is therefore "every file this project chooses to
+publish is present and counted", not "100 %". `license` and `readme` come from the build plan's
+Task 1 and Task 11 — if either is null, that task is not actually done and this is the check that
+says so.
 
 - [ ] **Step 5: Commit**
 
@@ -1929,7 +1938,7 @@ git commit -m "feat(assets): freely-licensed default clip set"
 | Story | Plan task | Settled by |
 |---|---|---|
 | E4.1 Repo hygiene and metadata | Task 1 | `node scripts/check-manifests.mjs` green and failing on a removed field; `pnpm lint` green |
-| E4.2 Community health files | Task 2 | `gh api …/community/profile` reports `health_percentage: 100` |
+| E4.2 Community health files | Task 2 | `gh api …/community/profile` shows `contributing`, `license`, `pull_request_template` and `readme` present — measured 85 %, not 100 %: the code of conduct is declined (D-31) and the endpoint does not count the `ISSUE_TEMPLATE/` directory form |
 | E3.5 CI matrix and coverage | Task 3 | six matrix legs green; a deliberately uncovered branch fails |
 | E3.4 Public API surface | Task 4 | three deliberate breaks each fail the right assertion |
 | E3.3 Accessibility audit | Task 5 | `pnpm a11y` clean; removing `aria-live` fails it |
