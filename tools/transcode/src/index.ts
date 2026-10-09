@@ -63,7 +63,8 @@ export async function main(argv: string[]): Promise<number> {
       return 1
     }
     const generators = readdirSync(gifsDir).filter((name) => name.endsWith('.mp4'))
-    const selected = options.only.length > 0 ? generators.filter((name) => options.only.includes(basename(name, '.mp4'))) : generators
+    const selected =
+      options.only.length > 0 ? generators.filter((name) => options.only.includes(basename(name, '.mp4'))) : generators
     if (selected.length === 0) {
       const wanted = options.only.length > 0 ? ` matching --only ${options.only.join(',')}` : ''
       console.error(`no .mp4 inputs found in ${gifsDir}${wanted}; refusing to write an empty manifest`)
@@ -131,21 +132,33 @@ export async function main(argv: string[]): Promise<number> {
     const checksumsPath = join(outDir, 'checksums.json')
 
     if (options.check) {
-      if (!existsSync(manifestPath)) throw new Error(`no committed manifest at ${manifestPath}; run once without --check to create it`)
+      if (!existsSync(manifestPath))
+        throw new Error(`no committed manifest at ${manifestPath}; run once without --check to create it`)
       const previous = JSON.parse(readFileSync(manifestPath, 'utf8')) as typeof manifest
-      const previousById = new Map<string, (typeof previous.clips)[number]>(previous.clips.map((clip) => [clip.id, clip]))
+      const previousById = new Map<string, (typeof previous.clips)[number]>(
+        previous.clips.map((clip) => [clip.id, clip]),
+      )
       const currentIds = new Set(manifest.clips.map((clip) => clip.id))
       const changed = manifest.clips.filter((clip) => {
         const before = previousById.get(clip.id)
         return !before || before.sha256.mp4 !== clip.sha256.mp4 || before.bytes.mp4 !== clip.bytes.mp4
       })
       const removed = previous.clips.filter((clip) => !currentIds.has(clip.id))
-      writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
+      writeFileSync(
+        checksumsPath,
+        `${JSON.stringify(
+          entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })),
+          null,
+          2,
+        )}\n`,
+      )
       rmSync(workDir, { recursive: true, force: true })
       // A clip-count mismatch always lands here: an id the committed manifest
       // lacks surfaces in `changed`, an id the current run lacks in `removed`.
       if (manifest.clips.length === 0 || changed.length > 0 || removed.length > 0) {
-        console.error(`--check failed: ${changed.length} clip(s) changed or new, ${removed.length} clip(s) removed, ${manifest.clips.length} current vs ${previous.clips.length} committed`)
+        console.error(
+          `--check failed: ${changed.length} clip(s) changed or new, ${removed.length} clip(s) removed, ${manifest.clips.length} current vs ${previous.clips.length} committed`,
+        )
         return 1
       }
       console.log(`--check passed: ${manifest.clips.length} clips are byte-identical`)
@@ -167,8 +180,18 @@ export async function main(argv: string[]): Promise<number> {
     }
 
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`)
-    writeFileSync(checksumsPath, `${JSON.stringify(entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })), null, 2)}\n`)
-    writeFileSync(join(outDir, 'qc-report.json'), `${JSON.stringify({ findings, notes, totalBytes: manifest.corpus.totalBytes }, null, 2)}\n`)
+    writeFileSync(
+      checksumsPath,
+      `${JSON.stringify(
+        entries.map((entry) => ({ path: `clips/${entry.id}.mp4`, sha256: sha256File(entry.outputPath) })),
+        null,
+        2,
+      )}\n`,
+    )
+    writeFileSync(
+      join(outDir, 'qc-report.json'),
+      `${JSON.stringify({ findings, notes, totalBytes: manifest.corpus.totalBytes }, null, 2)}\n`,
+    )
 
     const errors = findings.filter((finding) => finding.level === 'error')
     const reviews = findings.filter((finding) => finding.level === 'review')
@@ -178,10 +201,14 @@ export async function main(argv: string[]): Promise<number> {
       `Clips: ${entries.length}  Total: ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB`,
       '',
       '## Errors',
-      ...(errors.length === 0 ? ['none'] : errors.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
+      ...(errors.length === 0
+        ? ['none']
+        : errors.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
       '',
       '## Review',
-      ...(reviews.length === 0 ? ['none'] : reviews.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
+      ...(reviews.length === 0
+        ? ['none']
+        : reviews.map((finding) => `- ${finding.id}: ${finding.code} — ${finding.message}`)),
       '',
       '## Budget adaptations',
       ...(notes.length === 0 ? ['none'] : notes.map((note) => `- ${note}`)),
@@ -190,7 +217,9 @@ export async function main(argv: string[]): Promise<number> {
     writeFileSync(join(outDir, 'qc-report.md'), lines.join('\n'))
     rmSync(workDir, { recursive: true, force: true })
 
-    console.log(`wrote ${entries.length} clips, ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB, ${errors.length} error(s), ${reviews.length} review(s)`)
+    console.log(
+      `wrote ${entries.length} clips, ${(manifest.corpus.totalBytes / 1024 / 1024).toFixed(2)} MB, ${errors.length} error(s), ${reviews.length} review(s)`,
+    )
     return errors.length > 0 ? 1 : 0
   } catch (error) {
     const message = (error instanceof Error ? error.message : String(error)).replace(/\s*\r?\n\s*/g, ' ')

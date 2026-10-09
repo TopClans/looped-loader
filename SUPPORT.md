@@ -2,13 +2,13 @@
 
 ## Where to ask what
 
-| You have | Go to |
-|---|---|
-| A question, an integration problem, a "how do I…" | [Discussions](https://github.com/TopClans/looped-loader/discussions) |
+| You have                                                | Go to                                                                                            |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| A question, an integration problem, a "how do I…"       | [Discussions](https://github.com/TopClans/looped-loader/discussions)                             |
 | A defect — something the loader does that it should not | [Issues](https://github.com/TopClans/looped-loader/issues/new/choose), using the bug report form |
-| A feature proposal | Issues, using the feature request form |
-| A security vulnerability | **Privately**: see [SECURITY.md](SECURITY.md). Never a public issue. |
-| A clip you have the rights to contribute | See [CONTRIBUTING.md](CONTRIBUTING.md) and [NOTICE](NOTICE) |
+| A feature proposal                                      | Issues, using the feature request form                                                           |
+| A security vulnerability                                | **Privately**: see [SECURITY.md](SECURITY.md). Never a public issue.                             |
+| A clip you have the rights to contribute                | See [CONTRIBUTING.md](CONTRIBUTING.md) and [NOTICE](NOTICE)                                      |
 
 Issues are for defects and proposals. A question opened as an issue gets moved or closed with a
 pointer to Discussions, which is not a judgement on the question.

@@ -26,7 +26,11 @@ export const BUDGET_BYTES = 250 * 1024
 const round3 = (value: number): number => Math.round(value * 1000) / 1000
 const even = (value: number): number => Math.max(2, Math.round(value / 2) * 2)
 
-export function targetBox(width: number, height: number, longSide: number = LONG_SIDE): { width: number; height: number } {
+export function targetBox(
+  width: number,
+  height: number,
+  longSide: number = LONG_SIDE,
+): { width: number; height: number } {
   if (!Number.isFinite(width) || !Number.isFinite(height) || width <= 0 || height <= 0) {
     throw new RangeError(`targetBox: bad dimensions ${width}x${height}`)
   }
@@ -61,19 +65,30 @@ export function escalate(plan: EncodePlan, info: ProbeInfo): EncodePlan | null {
 
 export function encodeArgs(plan: EncodePlan, input: string, output: string): string[] {
   return [
-    '-v', 'error',
+    '-v',
+    'error',
     '-y',
-    '-i', input,
-    '-vf', `scale=${plan.width}:${plan.height},fps=${plan.fps}`,
-    '-c:v', 'libx264',
-    '-crf', String(plan.crf),
-    '-preset', 'slow',
-    '-profile:v', 'main',
-    '-pix_fmt', 'yuv420p',
-    '-movflags', '+faststart',
-    '-threads', '1',
+    '-i',
+    input,
+    '-vf',
+    `scale=${plan.width}:${plan.height},fps=${plan.fps}`,
+    '-c:v',
+    'libx264',
+    '-crf',
+    String(plan.crf),
+    '-preset',
+    'slow',
+    '-profile:v',
+    'main',
+    '-pix_fmt',
+    'yuv420p',
+    '-movflags',
+    '+faststart',
+    '-threads',
+    '1',
     '-an',
-    '-map_metadata', '-1',
+    '-map_metadata',
+    '-1',
     output,
   ]
 }

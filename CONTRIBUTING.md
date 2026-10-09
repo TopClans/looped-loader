@@ -5,11 +5,11 @@ because each of them has already caught a real defect here.
 
 ## Prerequisites
 
-| Tool | Version | Why |
-|---|---|---|
-| Node | `>=20.11` (measured: `v22.22.0`) | the packages declare that engine floor |
-| pnpm | `10.15.1` | `packageManager` in the root manifest; CI pins it too |
-| ffmpeg | `8.x` | only for `tools/transcode`; the tool shells out to `ffmpeg` and `ffprobe` |
+| Tool   | Version                          | Why                                                                       |
+| ------ | -------------------------------- | ------------------------------------------------------------------------- |
+| Node   | `>=20.11` (measured: `v22.22.0`) | the packages declare that engine floor                                    |
+| pnpm   | `10.15.1`                        | `packageManager` in the root manifest; CI pins it too                     |
+| ffmpeg | `8.x`                            | only for `tools/transcode`; the tool shells out to `ffmpeg` and `ffprobe` |
 
 `git config core.autocrlf` does not matter: `.gitattributes` pins text files to LF and media
 files to binary, so a Windows checkout and a Linux checkout produce the same bytes.
@@ -31,14 +31,14 @@ nothing to do with your change. CI runs the same order for the same reason.
 
 ## The layout
 
-| Path | What it is |
-|---|---|
-| `packages/core` | the zero-dependency core: manifest validation, clip selection, the `<video>` lifecycle |
-| `packages/vue` | the Vue 3 adapter over the core |
+| Path              | What it is                                                                                    |
+| ----------------- | --------------------------------------------------------------------------------------------- |
+| `packages/core`   | the zero-dependency core: manifest validation, clip selection, the `<video>` lifecycle        |
+| `packages/vue`    | the Vue 3 adapter over the core                                                               |
 | `packages/assets` | the 32 transcoded clips, `manifest.json`, `checksums.json` — **generated**, never hand-edited |
-| `packages/demo` | the playground and contact sheet; private, verified in a browser rather than by unit tests |
-| `tools/transcode` | the ffmpeg pipeline that produces `packages/assets` |
-| `docs/` | the product spec, the plans, the epic and the verification records |
+| `packages/demo`   | the playground and contact sheet; private, verified in a browser rather than by unit tests    |
+| `tools/transcode` | the ffmpeg pipeline that produces `packages/assets`                                           |
+| `docs/`           | the product spec, the plans, the epic and the verification records                            |
 
 ## Tests come first
 

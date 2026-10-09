@@ -97,13 +97,19 @@ describe('encodeArgs', () => {
     for (const required of [
       'scale=384:480,fps=30',
       'libx264',
-      '-preset', 'slow',
-      '-profile:v', 'main',
-      '-pix_fmt', 'yuv420p',
-      '-movflags', '+faststart',
+      '-preset',
+      'slow',
+      '-profile:v',
+      'main',
+      '-pix_fmt',
+      'yuv420p',
+      '-movflags',
+      '+faststart',
       '-an',
-      '-map_metadata', '-1',
-      '-threads', '1',
+      '-map_metadata',
+      '-1',
+      '-threads',
+      '1',
     ]) {
       expect(args).toContain(required)
     }

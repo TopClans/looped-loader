@@ -3,8 +3,7 @@ import type { Clip, ClipSource, Manifest } from './pool.js'
 
 const ABSOLUTE_URL = /^https?:\/\//i
 
-const invalid = (message: string): LoopedLoaderError =>
-  new LoopedLoaderError('manifest-invalid', message)
+const invalid = (message: string): LoopedLoaderError => new LoopedLoaderError('manifest-invalid', message)
 
 export function resolveSrc(baseUrl: string, src: string): string {
   if (ABSOLUTE_URL.test(src)) return src
@@ -15,14 +14,14 @@ export function resolveSrc(baseUrl: string, src: string): string {
   return `${base}/${src.replace(/^\/+/, '')}`
 }
 
-const isFiniteNumber = (value: unknown): value is number =>
-  typeof value === 'number' && Number.isFinite(value)
+const isFiniteNumber = (value: unknown): value is number => typeof value === 'number' && Number.isFinite(value)
 
 function parseSource(value: unknown, clipId: string, index: number): ClipSource {
   if (typeof value !== 'object' || value === null) throw invalid(`clip "${clipId}" source ${index} is not an object`)
   const source = value as Record<string, unknown>
   if (typeof source.src !== 'string' || source.src === '') throw invalid(`clip "${clipId}" source ${index} has no src`)
-  if (typeof source.type !== 'string' || source.type === '') throw invalid(`clip "${clipId}" source ${index} has no type`)
+  if (typeof source.type !== 'string' || source.type === '')
+    throw invalid(`clip "${clipId}" source ${index} has no type`)
   return { src: source.src as string, type: source.type as string }
 }
 
@@ -100,9 +99,7 @@ export function buildPool(manifest: Manifest, options: { clip?: string; clips?: 
   }
 
   if (clips !== undefined && clips.length > 0) {
-    const picked = clips
-      .map((id) => byId.get(id))
-      .filter((entry): entry is Clip => entry !== undefined)
+    const picked = clips.map((id) => byId.get(id)).filter((entry): entry is Clip => entry !== undefined)
     if (picked.length === 0) {
       throw new LoopedLoaderError('no-clips', 'none of the requested clip ids exist in the manifest')
     }

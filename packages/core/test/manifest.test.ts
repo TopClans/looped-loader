@@ -49,7 +49,11 @@ describe('resolveSrc', () => {
 
 describe('parseManifest', () => {
   it('accepts a valid manifest and ignores unknown fields', () => {
-    const manifest = parseManifest({ ...valid, futureField: { anything: true }, clips: [{ ...valid.clips[0], extra: 1 }] })
+    const manifest = parseManifest({
+      ...valid,
+      futureField: { anything: true },
+      clips: [{ ...valid.clips[0], extra: 1 }],
+    })
     expect(manifest.clips[0]?.id).toBe('a')
     expect(manifest.schemaVersion).toBe(1)
   })

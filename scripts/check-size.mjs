@@ -20,7 +20,9 @@ for (const { dir, max } of budgets) {
   }
   const bytes = files.reduce((total, name) => total + gzipSync(readFileSync(join(root, name))).length, 0)
   const over = bytes > max
-  console.log(`${dir}: ${(bytes / 1024).toFixed(1)} KB gzip, budget ${(max / 1024).toFixed(0)} KB — ${over ? 'OVER' : 'ok'}`)
+  console.log(
+    `${dir}: ${(bytes / 1024).toFixed(1)} KB gzip, budget ${(max / 1024).toFixed(0)} KB — ${over ? 'OVER' : 'ok'}`,
+  )
   if (over) failed = true
 }
 

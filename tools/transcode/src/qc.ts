@@ -85,14 +85,26 @@ export function checkClip(input: QcInput): QcFinding[] {
     }
   }
   if (input.seamOutput.seam > input.seamOutput.stepP90) {
-    add('review', 'loop-seam-review', `seam ${input.seamOutput.seam.toFixed(2)} exceeds the p90 step ${input.seamOutput.stepP90.toFixed(2)}`)
+    add(
+      'review',
+      'loop-seam-review',
+      `seam ${input.seamOutput.seam.toFixed(2)} exceeds the p90 step ${input.seamOutput.stepP90.toFixed(2)}`,
+    )
   }
   if (input.bytes > input.budgetBytes) {
     const kib = (value: number): string => `${Math.round(value / 1024)} KB`
     if (input.budgetExhausted) {
-      add('review', 'budget-exceeded', `${kib(input.bytes)} is over the ${kib(input.budgetBytes)} budget and the ladder is spent`)
+      add(
+        'review',
+        'budget-exceeded',
+        `${kib(input.bytes)} is over the ${kib(input.budgetBytes)} budget and the ladder is spent`,
+      )
     } else {
-      add('error', 'budget', `${kib(input.bytes)} is over the ${kib(input.budgetBytes)} budget while escalation is still possible`)
+      add(
+        'error',
+        'budget',
+        `${kib(input.bytes)} is over the ${kib(input.budgetBytes)} budget while escalation is still possible`,
+      )
     }
   }
   return findings

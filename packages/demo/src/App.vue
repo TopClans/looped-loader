@@ -19,8 +19,23 @@ const tab = ref<'sheet' | 'scenarios'>('sheet')
 </template>
 
 <style>
-body { margin: 0; font: 14px/1.4 system-ui, sans-serif; background: #111; color: #eee; }
-main { padding: 24px; }
-nav { display: flex; gap: 8px; margin-bottom: 24px; }
-button { padding: 6px 12px; }
+body {
+  margin: 0;
+  font:
+    14px/1.4 system-ui,
+    sans-serif;
+  background: #111;
+  color: #eee;
+}
+main {
+  padding: 24px;
+}
+nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+button {
+  padding: 6px 12px;
+}
 </style>

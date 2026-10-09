@@ -1,10 +1,5 @@
 export type ErrorCode =
-  | 'manifest-fetch'
-  | 'manifest-invalid'
-  | 'clip-fetch'
-  | 'decode'
-  | 'autoplay-blocked'
-  | 'no-clips'
+  'manifest-fetch' | 'manifest-invalid' | 'clip-fetch' | 'decode' | 'autoplay-blocked' | 'no-clips'
 
 export class LoopedLoaderError extends Error {
   readonly code: ErrorCode
