@@ -3,7 +3,7 @@
 The only place where story status lives. Update it at the close of every story, with
 evidence. Check it at the start of every session.
 
-**Current focus:** plan Tasks 1–11 are complete and merged (`f9afcc1`). **E5.2** (the first publish) and **E4.4** (going public) remain, and both are owner-gated and irreversible — nothing further starts without an explicit instruction.
+**Current focus:** build plan Tasks 1–11 are complete and merged into `main` (`2a27075`, CI ordering fixed in `df65247`); `origin/main` is in sync and CI is green. **Step 2 — open-source readiness and the `0.1.0` release — is designed and awaiting the owner's review**: `docs/superpowers/specs/2026-10-09-looped-loader-step-2-oss-release-design.md`. **E5.2** (the first publish) and **E4.4** (going public) remain owner-gated and irreversible — nothing further starts without an explicit instruction.
 **Baseline commit:** `a13b923` (spec, build plan and epic docs committed; no code yet).
 **Test baseline:** 116 automated tests on the integration branch at `f9afcc1` — core 53, tools 49, vue 14 under jsdom — plus the assets verifier, which reads the committed media rather than a fixture, and the browser evidence in `docs/verification/2026-10-08-browser/`. Operational note: run `pnpm install` after **every** merge that touches the lockfile, or the newly merged package's own suite fails for want of its dependencies, which looks like a code failure and is not.
 
@@ -71,6 +71,9 @@ are not repeated here.
 | D-24 | `attach()` no longer calls `resolve()`; resolution is owned by `start()` alone | the browser found that on a page with 32 loaders half of them died with `no-clips`: `attach()` started a fetch that bypassed `delayMs`, `start()`'s timer then started a second one, and the second pass re-entered `selectNext()`, which marks the clip it just selected as failed — so a one-clip pool reported `no-clips` on a pool that never failed. It also closed a second hole: under reduced motion `start()` deliberately does nothing, yet the removed branch still fetched on attach. Four regression tests pin it, each failing on the old source (`dc96e60`) | 2026-10-08 |
 | D-25 | A self-hosted deployment copies `manifest.json` **and** `clips/` into one directory and points `base-url` at that directory | the manifest's `sources[].src` are `clips/<id>.mp4`, so `base-url` must be the parent of `clips/`, not `clips/` itself. The demo shipped the wrong layout and no manifest at all; Vite's SPA fallback then answered the missing path with `index.html` at status **200**, which passed the loader's `response.ok` check and failed at `response.json()` — 0 of 32 clips playing. The README's recipe was already right; the demo now follows it (`c9db3ce`) | 2026-10-08 |
 | D-26 | `pnpm build` runs before `pnpm typecheck` in CI | in a fresh clone `packages/core/dist` does not exist (it is gitignored), and packages/vue and packages/demo resolve `@topclans/looped-loader-core` through those emitted declarations — so type-checking first fails with TS2307 plus a cascade of TS7006, and `pnpm test` would fail the same way. The first push of `main` went red exactly here; reproduced in a clean worktree, and the reordering turns the same tree green. A local run cannot catch it, because a developer's `dist/` is already built | 2026-10-08 |
+| D-27 | Step 2 publishes the **current 32 clips**; E4.5 (the freely-licensed set) is deferred | **Owner's decision, 2026-10-09.** The copyright risk is already accepted in the product spec §9, and E4.5 stays planned and costed so the option remains real rather than forgotten. Starting it now would delay the release by an L-sized story whose outcome may be a visibly worse clip set | 2026-10-09 |
+| D-28 | The OSS plan is **audited against the repository before any wave is dispatched** | it was written before the files it edits existed, and its own header says so. The build plan was written the same way and executing it surfaced nine defects (D-18…D-20) that reading had not caught; six are already visible in the OSS plan. The audit corrects blocks in the plan file and is then independently checked by a reviewer on a different model family, whose brief is to find blocks marked "verified" that are wrong | 2026-10-09 |
+| D-29 | Task 8's order is corrected to **metadata → flip → branch protection → security features → verification** | on a private repository on this plan, protection and the GitHub security features do not exist: `gh api …/branches/main/protection` answers `403 Upgrade to GitHub Pro or make this repository public`, and CodeQL and secret scanning are free only on public repositories. The plan's order stops at its step 3, before ever reaching the flip. The consequence is a window of minutes in which the repository is public and unprotected — accepted explicitly, with nothing pushed during it | 2026-10-09 |
 
 ## Technical debt and open items
 
@@ -78,7 +81,7 @@ are not repeated here.
 |---|---|---|---|
 | TD-1 | `u3dob97sw2421` (12.2 s) is expected to land at `budget-exceeded` — 890 KB at CRF 26, above the 250 KB budget even after both ladder steps | E2.3 | open — owner decides weight vs. dropping the clip |
 | TD-2 | Copyright on the 32 clips is **accepted, not solved**; the code/asset boundary and `NOTICE` mitigate, they do not fix | E4.5 | open — only if the owner revisits the risk decision |
-| TD-3 | Ownership of the `@topclans` npm scope is unverified — npmjs.com refuses non-browser clients | E5.1 | open — check with `npm whoami` + `npm org ls` once authenticated, or with `npm access` |
+| TD-3 | Ownership of the `@topclans` npm scope is unverified — npmjs.com refuses non-browser clients | E5.1 | **closed** 2026-10-09 — `npm org ls topclans` returns `{"topclans":"owner"}`, and the endpoint is authoritative: a nonexistent scope returns `E404 Scope not found`. It answers without a session, so the ownership question is settled independently of the npm login. The missing local session (`npm whoami` → `ENEEDAUTH`) is a separate gate, not an ownership question |
 | TD-4 | The CDN hosting recipe cannot be verified before the first publish | E5.3 | open — marked unverified in the README until then |
 | TD-5 | No React adapter in `0.1.0`; the core interface is designed for one | roadmap (E3.2) | accepted |
 | TD-6 | No published example app; consumers get the README recipes and the demo source | E3.2 | accepted |
@@ -108,7 +111,9 @@ against, so they are recorded here rather than remembered.
 ## Waves
 
 Wave logs live in `docs/epic/waves/<plan-name>.waves.md`, in the format given in
-[`RUNBOOK.md`](RUNBOOK.md) §3. No wave has been run yet.
+[`RUNBOOK.md`](RUNBOOK.md) §3. Waves 1–5 of the build plan are logged in
+[`waves/2026-10-08-looped-loader.waves.md`](waves/2026-10-08-looped-loader.waves.md); no wave of
+the OSS plan has been run yet.
 
 ## Session log
 
@@ -126,3 +131,5 @@ what actually happened, as opposed to what was planned.
 | 2026-10-08 | wave 5 start — E1.4 + E1.5 merged, E1.6 and E3.2 dispatched | `87bceed`, integration branch 109 tests + verifier green, typecheck and build green (core 5.4/8 KB, vue 2.4/12 KB); the Vue survey found two real component defects and one inert prop |
 | 2026-10-08 | wave 5 — E1.6 + E3.2 merged; E3.1 opened | demo at `99db10b` after the manifest-layout fix `c9db3ce`; docs and the two bounded Vue fixes at `d1b8ef9`; 113 tests + verifier green; the browser then found a **core** race that kills half the loaders on a page with many instances — the reason E3.1 exists |
 | 2026-10-08 | wave 5 close — E3.1 | the browser found three defects, all fixed: the demo served no manifest and Vite answered with HTML at 200 (`c9db3ce`), a core double-resolve killed half the loaders (`dc96e60`, merged `ce5261b`), and a favicon 404 failed criterion 5. Final run: 32/32 playing, 0 console errors, 0 failed requests, 0 long tasks, and reduced motion verified by real media emulation. Tasks 1–11 complete at `f9afcc1` |
+| 2026-10-08 | ship — merge to `main` and push | `feat/looped-loader` merged fast-forward; the first push of `main` went red on CI because `pnpm typecheck` ran before `pnpm build` and a clean clone has no `packages/core/dist`; reproduced in a clean worktree, fixed in `df65247`, CI green (run `37828155212`), `origin/main` in sync. Recorded as D-26 |
+| 2026-10-09 | step 2 brainstorm — design spec | measured the state rather than trusting the plan (CI green at `df65247`, community profile 42 % not 14 %, `@topclans` verified as the owner's org, no npm session, branch protection impossible while private); six OSS-plan defects found by comparing it with the repository; design spec written and committed; E4.5 deferred by the owner (D-27), audit-before-execute adopted (D-28), Task 8 reordered (D-29) |
