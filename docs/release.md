@@ -63,6 +63,34 @@ npm trust list @topclans/looped-loader-core
 - npm does not verify the configuration when it is saved. A wrong field surfaces only on the
   first publish.
 
+## The first publish is the exception, and it was measured
+
+`npm trust` could not be attached to these packages before they exist, from this machine, on
+2026-10-09 — after the owner had logged in:
+
+```text
+$ npm trust github @topclans/looped-loader-core --file release.yml --repo TopClans/looped-loader --allow-publish
+Two-factor authentication is required for this operation
+npm error 403 403 Forbidden - POST https://registry.npmjs.org/-/package/@topclans%2flooped-loader-core/trust
+
+$ npm trust list @topclans/looped-loader-core
+npm error 403 403 Forbidden - GET https://registry.npmjs.org/-/package/@topclans%2flooped-loader-core/trust
+```
+
+Nothing was configured — the second command is the proof. The `--dry-run` probe that preceded it
+was green and is **not** evidence: it never reaches the registry, and npm does not validate a
+configuration when it is saved. Two causes remain possible and cannot be separated without the
+owner's one-time password: the `npm login` session carried no 2FA approval for this operation, or
+npm refuses a trusted publisher on a package that does not exist yet (its documentation describes
+configuring one from the package's *settings*).
+
+- **If the owner's own attempt with 2FA succeeds**, tag and publish in the same sitting: the
+  2-day window starts the moment the configuration exists.
+- **If it fails with `403` again**, the package must exist first. Publish `0.1.0` with a
+  short-lived token created for that one release (handed over through the vault, never as a
+  command argument), revoke it, and configure trusted publishing for `0.1.1`. `0.1.0` would then
+  carry **no attestation** — a release note, not a footnote.
+
 ## The dry run
 
 ```powershell
