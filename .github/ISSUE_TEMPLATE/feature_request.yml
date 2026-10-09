@@ -54,5 +54,8 @@ body:
           required: false
         - label: It does not add a seventh error code — the six in the spec are a closed set
           required: false
-        - label: It is honest under `prefers-reduced-motion: reduce` — no clip is fetched and nothing animates
+        # Single-quoted: the label contains `prefers-reduced-motion: reduce`, and a
+        # colon+space inside a plain scalar is a nested mapping by the YAML spec —
+        # unparsed, the whole file is rejected and the form never renders.
+        - label: 'It is honest under `prefers-reduced-motion: reduce` — no clip is fetched and nothing animates'
           required: false
